@@ -1,0 +1,28 @@
+### Misc ###
+.DS_Store
+
+### ENV ###
+.env
+.venv
+
+### IDE ###
+# JETBRAINS
+.idea/
+# VSCODE
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+
+### Dependencies ###
+
+
+### Logs ###
+logs
+*.log
+
+### Cache ###
+.eslintcache
+__pycache__/
