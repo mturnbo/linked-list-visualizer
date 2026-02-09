@@ -62,3 +62,25 @@ def test_insert():
     ll.append(3)
     ll.insert(4, 1)
     assert ll.get_node(1).value == 4
+
+
+def test_replace():
+    ll = LinkedList()
+    ll.append(1)
+    ll.append(2)
+    ll.append(3)
+    ll.replace(1, 4)
+    assert ll.get_node(1).value == 4
+
+    ll.replace(2, 5)
+    assert ll.get_node(2).value == 5
+
+
+def test_trim():
+    ll = LinkedList()
+    ll.append(1)
+    ll.append(2)
+    ll.append(3)
+    assert ll.size == 3
+    ll.trim()
+    assert ll.size == 2
