@@ -35,3 +35,30 @@ def test_list_multiple_append():
         assert ll.tail.value == val
 
     assert ll.size == len(vals)
+
+
+def test_prepend():
+    ll = LinkedList()
+    ll.append(2)
+    ll.append(3)
+    val = 1
+    ll.prepend(val)
+    assert ll.size == 3
+    assert ll.head.value == val
+    assert ll.head.next.value == 2
+
+
+def test_get_node():
+    ll = LinkedList()
+    ll.append(1)
+    ll.append(2)
+    ll.append(3)
+    assert ll.get_node(1).value == 2
+
+def test_insert():
+    ll = LinkedList()
+    ll.append(1)
+    ll.append(2)
+    ll.append(3)
+    ll.insert(4, 1)
+    assert ll.get_node(1).value == 4
