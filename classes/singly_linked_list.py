@@ -1,4 +1,4 @@
-from node import Node
+from classes.node import Node
 from typing import Any, Optional
 
 class LinkedList:
@@ -19,7 +19,7 @@ class LinkedList:
             node_list.append(current_node.value)
             current_node = current_node.next
         node_str = " \u21D2 ".join(map(str, node_list))
-        return f"{self.size} Elements:[{self.head.value}][{self.tail.value}]: [{node_str}]"
+        return f"{self.size} Elements: [{node_str}]"
 
 
     def append(self, value: Any):
