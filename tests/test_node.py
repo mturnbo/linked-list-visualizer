@@ -1,6 +1,19 @@
 from classes.node import Node
 
-def test_node_links_like_linked_list_usage():
+def test_node_singly_linked_list_usage():
+    first = Node(1)
+    second = Node(2)
+    third = Node(3)
+
+    first.next = second
+    second.next = third
+
+    assert first.next is second
+    assert second.next is third
+    assert third.next is None
+
+
+def test_node_doubly_linked_list_usage():
     first = Node(1)
     second = Node(2)
     third = Node(3)
