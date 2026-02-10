@@ -84,5 +84,17 @@ class LinkedList:
         return False
 
 
+    def remove(self, index: int):
+        if index == 0:
+            self.head = self.head.next
+            self.size -= 1
+        elif index >= self.size - 1:
+            self.trim()
+        else:
+            current_node = self.get_node(index - 1)
+            current_node.next = current_node.next.next
+            self.size -= 1
+
+
     def show(self):
         print(self)
