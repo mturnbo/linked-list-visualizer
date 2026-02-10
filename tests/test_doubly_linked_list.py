@@ -1,7 +1,7 @@
-from classes.singly_linked_list import LinkedList
+from classes.doubly_linked_list import DoublyLinkedList
 
 def test_empty_list_initialization():
-    ll = LinkedList()
+    ll = DoublyLinkedList()
     assert ll.size == 0
     assert ll.head is None
     assert ll.tail is None
@@ -9,7 +9,7 @@ def test_empty_list_initialization():
 
 def test_nonempty_list_initialization():
     initial_value = 123
-    ll = LinkedList(initial_value)
+    ll = DoublyLinkedList(initial_value)
     assert ll.size == 1
     assert ll.head.value == initial_value
     assert ll.tail.value == initial_value
@@ -18,7 +18,7 @@ def test_nonempty_list_initialization():
 
 
 def test_list_append():
-    ll = LinkedList()
+    ll = DoublyLinkedList()
     val = 1
     ll.append(val)
     assert ll.size == 1
@@ -27,7 +27,7 @@ def test_list_append():
 
 
 def test_list_multiple_append():
-    ll = LinkedList()
+    ll = DoublyLinkedList()
     vals = [1, 2, 3]
     for val in vals:
         ll.append(val)
@@ -38,7 +38,7 @@ def test_list_multiple_append():
 
 
 def test_prepend():
-    ll = LinkedList()
+    ll = DoublyLinkedList()
     ll.append(2)
     ll.append(3)
     val = 1
@@ -49,14 +49,14 @@ def test_prepend():
 
 
 def test_get_node():
-    ll = LinkedList()
+    ll = DoublyLinkedList()
     ll.append(1)
     ll.append(2)
     ll.append(3)
     assert ll.get_node(1).value == 2
 
 def test_insert():
-    ll = LinkedList()
+    ll = DoublyLinkedList()
     ll.append(1)
     ll.append(2)
     ll.append(3)
@@ -65,7 +65,7 @@ def test_insert():
 
 
 def test_replace():
-    ll = LinkedList()
+    ll = DoublyLinkedList()
     ll.append(1)
     ll.append(2)
     ll.append(3)
@@ -78,7 +78,7 @@ def test_replace():
 
 
 def test_trim():
-    ll = LinkedList()
+    ll = DoublyLinkedList()
     ll.append(1)
     ll.append(2)
     ll.append(3)
@@ -89,7 +89,7 @@ def test_trim():
 
 
 def test_contains():
-    ll = LinkedList()
+    ll = DoublyLinkedList()
     ll.append(1)
     ll.append(2)
     assert ll.contains(1) is True
@@ -98,7 +98,7 @@ def test_contains():
 
 
 def test_remove():
-    ll = LinkedList()
+    ll = DoublyLinkedList()
     ll.append(1)
     ll.append(2)
     ll.remove(1)
@@ -106,10 +106,9 @@ def test_remove():
 
 
 def test_reverse():
-    ll = LinkedList()
+    ll = DoublyLinkedList()
     ll.append(1)
     ll.append(2)
     ll.reverse()
     assert ll.head.value == 2
     assert ll.tail.value == 1
-

@@ -3,7 +3,7 @@ from classes.singly_linked_list import LinkedList
 from typing import Any, Optional
 
 class DoublyLinkedList(LinkedList):
-    def __init__(self, initial_node_value: Any = None):
+    def __init__(self, initial_node_value: int | float | str | bool = None):
         super().__init__(initial_node_value)
 
 
@@ -35,7 +35,7 @@ class DoublyLinkedList(LinkedList):
         return current_node
 
 
-    def append(self, value: int):
+    def append(self, value: int | float | str | bool):
         new_node = Node(value)
         if self.head:
             self.tail.next = new_node
@@ -46,10 +46,49 @@ class DoublyLinkedList(LinkedList):
         self.size += 1
 
 
-    def prepend(self, value: int):
+    def prepend(self, value: int | float | str | bool):
         new_node = Node(value)
         if self.head:
             new_node.next = self.head
             self.head.prev = new_node
         self.head = new_node
         self.size += 1
+
+
+    def remove(self, index: int):
+        if index == 0:
+            self.head = self.head.next
+            self.head.prev = None
+        elif index >= self.size - 1:
+            self.tail = self.tail.prev
+            self.tail.next = None
+        else:
+            current_node = self.get_node(index -1)
+            next_node = current_node.next.next
+            current_node.next = next_node
+            next_node.prev = current_node
+        self.size -= 1
+
+
+    def trim(self):
+        self.remove(self.size - 1)
+
+
+    def contains(self, value: int):
+        forward = self.head
+        backward = self.tail
+
+        for _ in range((self.size // 2) + 1):
+            if forward.value == value or backward.value == value: return True
+            forward = forward.next
+            backward = backward.prev
+
+        return False
+
+
+    def reverse(self):
+        current_node = self.head
+        while current_node:
+            current_node.prev, current_node.next = current_node.next, current_node.prev
+            current_node = current_node.prev
+        self.head, self.tail = self.tail, self.head
