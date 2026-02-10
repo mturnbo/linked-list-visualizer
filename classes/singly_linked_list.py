@@ -43,14 +43,14 @@ class LinkedList:
         self.size += 1
 
 
-    def prepend(self, value: int):
+    def prepend(self, value: Any):
         new_node = Node(value)
         new_node.next = self.head
         self.head = new_node
         self.size += 1
 
 
-    def insert(self, value: int, index: int):
+    def insert(self, value: Any, index: int):
         if index == 0:
             self.prepend(value)
         elif index >= self.size:
@@ -63,7 +63,7 @@ class LinkedList:
             self.size += 1
 
 
-    def replace(self, index: int, value: int):
+    def replace(self, index: int, value: Any):
         current_node = self.get_node(index)
         current_node.value = value
 
@@ -73,6 +73,27 @@ class LinkedList:
         current_node.next = None
         self.tail = current_node
         self.size -= 1
+
+
+    def contains(self, value: Any) -> bool:
+        current_node = self.head
+        while current_node:
+            if current_node.value == value: return True
+            current_node = current_node.next
+
+        return False
+
+
+    def remove(self, index: int):
+        if index == 0:
+            self.head = self.head.next
+            self.size -= 1
+        elif index >= self.size - 1:
+            self.trim()
+        else:
+            current_node = self.get_node(index - 1)
+            current_node.next = current_node.next.next
+            self.size -= 1
 
 
     def show(self):

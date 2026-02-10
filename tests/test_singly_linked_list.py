@@ -86,3 +86,20 @@ def test_trim():
 
     ll.trim()
     assert ll.size == 2
+
+
+def test_contains():
+    ll = LinkedList()
+    ll.append(1)
+    ll.append(2)
+    assert ll.contains(1) is True
+    assert ll.contains(2) is True
+    assert ll.contains(3) is False
+
+
+def test_remove():
+    ll = LinkedList()
+    ll.append(1)
+    ll.append(2)
+    ll.remove(1)
+    assert ll.size == 1
