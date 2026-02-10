@@ -6,6 +6,14 @@ This project visualizes linked list operations (append, prepend, insert, remove,
 - Python 3.10+
 - `pygame` installed in your environment
 
+**Install**
+Create/activate a virtual environment, then install dependencies:
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install pygame
+```
+
 **Usage**
 Run with a comma-separated list of values (defaults to `1,2,3,4,5`):
 ```bash
@@ -73,3 +81,6 @@ insert 3 2
 replace 2 33
 replace 5 44
 ```
+
+**Screenshot**
+![Linked List Visualizer](docs/LinkedListVisualizer_Screenshot1.png)
