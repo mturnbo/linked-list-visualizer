@@ -1,0 +1,16 @@
+append 2
+append 4
+append 6
+append 7
+append 8
+append a
+append b
+append c
+append 22
+append 26
+append 27
+append 50
+prepend 1
+insert 3 2
+replace 2 33
+replace 5 44
