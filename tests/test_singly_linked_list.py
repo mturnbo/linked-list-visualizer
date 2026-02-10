@@ -60,7 +60,7 @@ def test_insert():
     ll.append(1)
     ll.append(2)
     ll.append(3)
-    ll.insert(4, 1)
+    ll.insert(1, 4)
     assert ll.get_node(1).value == 4
 
 

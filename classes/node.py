@@ -1,10 +1,9 @@
 from dataclasses import dataclass
-from typing import Any, Optional
 
 @dataclass
 class Node:
     """Class for a single node in a linked list."""
-    value: Any
+    value: int | float | str | bool
     prev = None
     next = None
 

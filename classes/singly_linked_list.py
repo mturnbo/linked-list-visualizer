@@ -33,7 +33,7 @@ class LinkedList:
         return current_node
 
 
-    def append(self, value: Any):
+    def append(self, value: int | float | str | bool):
         new_node = Node(value)
         if self.head:
             self.tail.next = new_node
@@ -43,14 +43,14 @@ class LinkedList:
         self.size += 1
 
 
-    def prepend(self, value: Any):
+    def prepend(self, value: int | float | str | bool):
         new_node = Node(value)
         new_node.next = self.head
         self.head = new_node
         self.size += 1
 
 
-    def insert(self, value: Any, index: int):
+    def insert(self, index: int, value: int | float | str | bool):
         if index == 0:
             self.prepend(value)
         elif index >= self.size:
@@ -63,7 +63,7 @@ class LinkedList:
             self.size += 1
 
 
-    def replace(self, index: int, value: Any):
+    def replace(self, index: int, value: int | float | str | bool):
         current_node = self.get_node(index)
         current_node.value = value
 
@@ -75,7 +75,7 @@ class LinkedList:
         self.size -= 1
 
 
-    def contains(self, value: Any) -> bool:
+    def contains(self, value: int | float | str | bool) -> bool:
         current_node = self.head
         while current_node:
             if current_node.value == value: return True
