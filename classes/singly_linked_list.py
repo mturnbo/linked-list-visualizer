@@ -63,5 +63,17 @@ class LinkedList:
             self.size += 1
 
 
+    def replace(self, index: int, value: int):
+        current_node = self.get_node(index)
+        current_node.value = value
+
+
+    def trim(self):
+        current_node = self.get_node(self.size - 2)
+        current_node.next = None
+        self.tail = current_node
+        self.size -= 1
+
+
     def show(self):
         print(self)
