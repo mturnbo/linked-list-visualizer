@@ -52,6 +52,7 @@ def parse_operations(path: str) -> List[Tuple[str, List[int | float | str | bool
 
 def main():
     parser = argparse.ArgumentParser(description="Visualize a linked list with pygame.")
+    parser.add_argument("operation", choices=["print", "vis"], help="Print to command line or visualize with pygame.")
     parser.add_argument("--values", type=str, default="", help="Comma-separated list of node values.")
     parser.add_argument("--operations-file", type=str, default="", help="Path to operations text file.")
     parser.add_argument("--interval", type=float, default=DEFAULT_INTERVAL, help="Seconds per operation.")
@@ -69,14 +70,18 @@ def main():
         operations = [("append", [value], f"append {value}") for value in values]
         values = []
 
-    run_visualization(
-        values=values,
-        operations=operations,
-        interval=args.interval,
-        arrow_interval=args.arrow_interval,
-        width=args.width,
-        height=args.height,
-    )
+    if args.operation == "print":
+        for op in operations:
+            print(op)
+    else:
+        run_visualization(
+            values=values,
+            operations=operations,
+            interval=args.interval,
+            arrow_interval=args.arrow_interval,
+            width=args.width,
+            height=args.height,
+        )
 
 
 if __name__ == "__main__":
