@@ -1,7 +1,8 @@
 import argparse
+from classes.singly_linked_list import LinkedList
 from typing import List, Tuple
 
-from visualization import DEFAULT_HEIGHT
+from visualization import DEFAULT_HEIGHT, build_linked_list_from_values
 from visualization import DEFAULT_INTERVAL
 from visualization import DEFAULT_VALUES
 from visualization import DEFAULT_WIDTH
@@ -50,30 +51,55 @@ def parse_operations(path: str) -> List[Tuple[str, List[int | float | str | bool
     return operations
 
 
+def build_linked_list_from_ops(operations: List[Tuple[str, List[int | float | str | bool], str]]):
+    ll = LinkedList()
+    for op in operations:
+        match op[0]:
+            case "append":
+                ll.append(op[1][0])
+            case "prepend":
+                ll.prepend(op[1][0])
+            case "insert":
+                ll.insert(op[1][0], op[1][1])
+            case "remove":
+                ll.remove(op[1][0])
+            case "replace":
+                ll.replace(op[1][0], op[1][1])
+            case _:
+                raise ValueError(f"Unknown operation type '{op[0]}' in operations file.")
+
+    return ll
+
 def main():
     parser = argparse.ArgumentParser(description="Visualize a linked list with pygame.")
-    parser.add_argument("operation", choices=["print", "vis"], help="Print to command line or visualize with pygame.")
+    parser.add_argument("display", choices=["print", "animate"], help="Print to command line or visualize with pygame.")
     parser.add_argument("--values", type=str, default="", help="Comma-separated list of node values.")
-    parser.add_argument("--operations-file", type=str, default="", help="Path to operations text file.")
+    parser.add_argument("--ops-file", type=str, default="", help="Path to operations text file.")
     parser.add_argument("--interval", type=float, default=DEFAULT_INTERVAL, help="Seconds per operation.")
-    parser.add_argument("--arrow-interval", type=float, default=0.5, help="Seconds for arrow animation.")
+    parser.add_argument("--arrow-interval", type=float, default=DEFAULT_INTERVAL, help="Seconds for arrow animation.")
     parser.add_argument("--width", type=int, default=DEFAULT_WIDTH, help="Window width in pixels.")
     parser.add_argument("--height", type=int, default=DEFAULT_HEIGHT, help="Window height in pixels.")
     args = parser.parse_args()
 
-    if args.operations_file and not args.values:
-        values = []
-    else:
+    values = operations = []
+    if args.values and not args.ops_file:
         values = parse_values(args.values)
-    operations = parse_operations(args.operations_file)
-    if not operations:
         operations = [("append", [value], f"append {value}") for value in values]
-        values = []
-
-    if args.operation == "print":
-        for op in operations:
-            print(op)
+    elif args.ops_file:
+        operations = parse_operations(args.ops_file)
     else:
+        raise ValueError("Must specify either values or operations file.")
+
+    # if args.ops_file and not args.values:
+    #     values = []
+    # else:
+    #     values = parse_values(args.values)
+    # operations = parse_operations(args.ops_file)
+    # if not operations:
+    #     operations = [("append", [value], f"append {value}") for value in values]
+    #     values = []
+
+    if args.display == "animate":
         run_visualization(
             values=values,
             operations=operations,
@@ -82,7 +108,12 @@ def main():
             width=args.width,
             height=args.height,
         )
-
+    else:
+        if values:
+            ll = build_linked_list_from_values(values)
+        else:
+            ll = build_linked_list_from_ops(operations)
+        ll.show()
 
 if __name__ == "__main__":
     main()
