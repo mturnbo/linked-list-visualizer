@@ -8,7 +8,7 @@ from classes.singly_linked_list import LinkedList
 
 
 DEFAULT_VALUES = [1, 2, 3, 4, 5]
-DEFAULT_INTERVAL = 0.8
+DEFAULT_INTERVAL = 0.4
 DEFAULT_WIDTH = 1000
 DEFAULT_HEIGHT = 500
 DEFAULT_BG_COLOR = (16, 24, 32)
@@ -55,7 +55,7 @@ class OperationFrame:
     label: str = ""
 
 
-def build_linked_list(values: List[int | float | str | bool]):
+def build_linked_list_from_values(values: List[int | float | str | bool]):
     linked_list = LinkedList()
     for value in values:
         linked_list.append(value)
@@ -168,7 +168,7 @@ def build_frames(
     operations: List[Tuple[str, List[int | float | str | bool], str]],
     interval: float,
 ) -> List[OperationFrame]:
-    linked_list = build_linked_list(initial_values)
+    linked_list = build_linked_list_from_values(initial_values)
     nodes = [NodeState(node_id=index, value=value) for index, value in enumerate(initial_values)]
     next_id = len(nodes)
     frames: List[OperationFrame] = []
