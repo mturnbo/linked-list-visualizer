@@ -1,7 +1,7 @@
 from classes.node import Node
 from typing import Any, Optional
 
-class LinkedList:
+class SinglyLinkedList:
     def __init__(self, initial_node_value: Any = None):
         self.head: Node = Node(initial_node_value) if initial_node_value else None
         self.tail: Node = self.head

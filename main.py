@@ -1,5 +1,5 @@
 import argparse
-from classes.singly_linked_list import LinkedList
+from classes.linked_list import LinkedList
 from typing import List, Tuple
 
 from visualization import DEFAULT_HEIGHT, build_linked_list_from_values
@@ -51,26 +51,6 @@ def parse_operations(path: str) -> List[Tuple[str, List[int | float | str | bool
     return operations
 
 
-def build_linked_list_from_ops(operations: List[Tuple[str, List[int | float | str | bool], str]]):
-    ll = LinkedList()
-    for op in operations:
-        match op[0]:
-            case "append":
-                ll.append(op[1][0])
-            case "prepend":
-                ll.prepend(op[1][0])
-            case "insert":
-                ll.insert(op[1][0], op[1][1])
-            case "remove":
-                ll.remove(op[1][0])
-            case "replace":
-                ll.replace(op[1][0], op[1][1])
-            case _:
-                raise ValueError(f"Unknown operation type '{op[0]}' in operations file.")
-
-    return ll
-
-
 def main():
     parser = argparse.ArgumentParser(description="Visualize a linked list with pygame.")
     parser.add_argument("display", choices=["print", "animate"], help="Print to command line or visualize with pygame.")
@@ -102,9 +82,9 @@ def main():
         )
     else:
         if values:
-            ll = build_linked_list_from_values(values)
+            ll = LinkedList.build_from_values("singly", values)
         else:
-            ll = build_linked_list_from_ops(operations)
+            ll = LinkedList.build_from_ops("singly", operations)
         ll.show()
 
 

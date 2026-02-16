@@ -1,8 +1,7 @@
 from classes.node import Node
-from classes.singly_linked_list import LinkedList
-from typing import Any, Optional
+from classes.singly_linked_list import SinglyLinkedList
 
-class DoublyLinkedList(LinkedList):
+class DoublyLinkedList(SinglyLinkedList):
     def __init__(self, initial_node_value: int | float | str | bool = None):
         super().__init__(initial_node_value)
 

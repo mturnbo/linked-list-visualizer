@@ -1,10 +1,8 @@
 import math
 from dataclasses import dataclass
+from classes.linked_list import LinkedList
 from typing import List, Optional, Tuple
-
 import pygame
-
-from classes.singly_linked_list import LinkedList
 
 
 DEFAULT_VALUES = [1, 2, 3, 4, 5]
@@ -56,7 +54,7 @@ class OperationFrame:
 
 
 def build_linked_list_from_values(values: List[int | float | str | bool]):
-    linked_list = LinkedList()
+    linked_list = SinglyLinkedList()
     for value in values:
         linked_list.append(value)
     return linked_list
@@ -168,7 +166,7 @@ def build_frames(
     operations: List[Tuple[str, List[int | float | str | bool], str]],
     interval: float,
 ) -> List[OperationFrame]:
-    linked_list = build_linked_list_from_values(initial_values)
+    linked_list = LinkedList.build_from_values("singly", initial_values)
     nodes = [NodeState(node_id=index, value=value) for index, value in enumerate(initial_values)]
     next_id = len(nodes)
     frames: List[OperationFrame] = []
