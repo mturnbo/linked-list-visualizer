@@ -1,7 +1,7 @@
 from classes.node import Node
 from typing import Any, Optional
 
-class LinkedList:
+class SinglyLinkedList:
     def __init__(self, initial_node_value: Any = None):
         self.head: Node = Node(initial_node_value) if initial_node_value else None
         self.tail: Node = self.head
@@ -43,11 +43,21 @@ class LinkedList:
         self.size += 1
 
 
+    def append_values(self, values: list[int | float | str | bool]):
+        for value in values:
+            self.append(value)
+
+
     def prepend(self, value: int | float | str | bool):
         new_node = Node(value)
         new_node.next = self.head
         self.head = new_node
         self.size += 1
+
+
+    def prepend_values(self, values: list[int | float | str | bool]):
+        for value in values.reverse[::-1]:
+            self.prepend(value)
 
 
     def insert(self, index: int, value: int | float | str | bool):
