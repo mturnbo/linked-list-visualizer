@@ -1,33 +1,29 @@
-from typing import Any
-
 from classes.singly_linked_list import SinglyLinkedList
 from classes.doubly_linked_list import DoublyLinkedList
 from typing import List, Tuple
 
 class LinkedList:
-
     @staticmethod
-    def generate(type: str = "singly") -> SinglyLinkedList | DoublyLinkedList:
-        if type == "singly":
+    def create(ll_type: str = "singly") -> SinglyLinkedList | DoublyLinkedList:
+        if ll_type == "singly":
             return SinglyLinkedList()
-        elif type == "doubly":
+        elif ll_type == "doubly":
             return DoublyLinkedList()
         else:
-            raise ValueError(f"Unknown linked list type '{self.type}'.")
+            raise ValueError(f"Unknown linked list type '{ll_type}'.")
 
 
     @staticmethod
     def build_from_values(ll_type: str, values: List[int | float | str | bool]) -> SinglyLinkedList | DoublyLinkedList:
-        ll = LinkedList.generate(ll_type)
-        for value in values:
-            ll.append(value)
+        ll = LinkedList.create(ll_type)
+        ll.append_values(values)
 
         return ll
 
 
     @staticmethod
     def build_from_ops(ll_type: str, operations: List[Tuple[str, List[int | float | str | bool], str]]):
-        ll = LinkedList.generate(ll_type)
+        ll = LinkedList.create(ll_type)
         for op in operations:
             match op[0]:
                 case "append":

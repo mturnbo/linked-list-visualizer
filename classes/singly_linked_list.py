@@ -43,6 +43,11 @@ class SinglyLinkedList:
         self.size += 1
 
 
+    def append_values(self, values: list[int | float | str | bool]):
+        for value in values:
+            self.append(value)
+
+
     def prepend(self, value: int | float | str | bool):
         new_node = Node(value)
         new_node.next = self.head

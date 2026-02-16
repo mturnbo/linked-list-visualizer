@@ -1,11 +1,7 @@
 import argparse
 from classes.linked_list import LinkedList
 from typing import List, Tuple
-
-from visualization import DEFAULT_HEIGHT, build_linked_list_from_values
-from visualization import DEFAULT_INTERVAL
-from visualization import DEFAULT_VALUES
-from visualization import DEFAULT_WIDTH
+from visualization import DEFAULT_HEIGHT, DEFAULT_INTERVAL, DEFAULT_VALUES, DEFAULT_WIDTH
 from visualization import run_visualization
 
 
