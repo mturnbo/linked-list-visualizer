@@ -70,6 +70,7 @@ def build_linked_list_from_ops(operations: List[Tuple[str, List[int | float | st
 
     return ll
 
+
 def main():
     parser = argparse.ArgumentParser(description="Visualize a linked list with pygame.")
     parser.add_argument("display", choices=["print", "animate"], help="Print to command line or visualize with pygame.")
@@ -90,15 +91,6 @@ def main():
     else:
         raise ValueError("Must specify either values or operations file.")
 
-    # if args.ops_file and not args.values:
-    #     values = []
-    # else:
-    #     values = parse_values(args.values)
-    # operations = parse_operations(args.ops_file)
-    # if not operations:
-    #     operations = [("append", [value], f"append {value}") for value in values]
-    #     values = []
-
     if args.display == "animate":
         run_visualization(
             values=values,
@@ -114,6 +106,7 @@ def main():
         else:
             ll = build_linked_list_from_ops(operations)
         ll.show()
+
 
 if __name__ == "__main__":
     main()
