@@ -55,6 +55,11 @@ class SinglyLinkedList:
         self.size += 1
 
 
+    def prepend_values(self, values: list[int | float | str | bool]):
+        for value in values.reverse[::-1]:
+            self.prepend(value)
+
+
     def insert(self, index: int, value: int | float | str | bool):
         if index == 0:
             self.prepend(value)
