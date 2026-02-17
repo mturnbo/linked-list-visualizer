@@ -1,9 +1,7 @@
 import argparse
 from classes.linked_list import LinkedList
 from typing import List, Tuple
-from visualization import DEFAULT_HEIGHT, DEFAULT_INTERVAL, DEFAULT_WIDTH
-from visualization import run_visualization
-from classes.visualizer import LinkedListVisualizer
+from classes.visualizer import LinkedListVisualizer, DEFAULT_HEIGHT, DEFAULT_INTERVAL, DEFAULT_WIDTH
 
 
 def parse_values(raw_values: str) -> List[int | float | str | bool]:
