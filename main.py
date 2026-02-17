@@ -1,8 +1,9 @@
 import argparse
 from classes.linked_list import LinkedList
 from typing import List, Tuple
-from visualization import DEFAULT_HEIGHT, DEFAULT_INTERVAL, DEFAULT_VALUES, DEFAULT_WIDTH
+from visualization import DEFAULT_HEIGHT, DEFAULT_INTERVAL, DEFAULT_WIDTH
 from visualization import run_visualization
+from classes.visualizer import LinkedListVisualizer
 
 
 def parse_values(raw_values: str) -> List[int | float | str | bool]:
@@ -68,14 +69,21 @@ def main():
         raise ValueError("Must specify either values or operations file.")
 
     if args.display == "animate":
-        run_visualization(
-            values=values,
+        llv = LinkedListVisualizer(
             operations=operations,
-            interval=args.interval,
+            node_interval=args.interval,
             arrow_interval=args.arrow_interval,
             width=args.width,
             height=args.height,
         )
+        llv.display()
+        # run_visualization(
+        #     operations=operations,
+        #     interval=args.interval,
+        #     arrow_interval=args.arrow_interval,
+        #     width=args.width,
+        #     height=args.height,
+        # )
     else:
         if values:
             ll = LinkedList.build_from_values("singly", values)

@@ -5,7 +5,6 @@ from typing import List, Optional, Tuple
 import pygame
 
 
-DEFAULT_VALUES = [1, 2, 3, 4, 5]
 DEFAULT_INTERVAL = 0.4
 DEFAULT_WIDTH = 1000
 DEFAULT_HEIGHT = 500
@@ -51,13 +50,6 @@ class OperationFrame:
     replaced_id: Optional[int] = None
     current_new_id: Optional[int] = None
     label: str = ""
-
-
-def build_linked_list_from_values(values: List[int | float | str | bool]):
-    linked_list = SinglyLinkedList()
-    for value in values:
-        linked_list.append(value)
-    return linked_list
 
 
 def clamp(value: float, min_value: float, max_value: float) -> float:
@@ -162,12 +154,11 @@ def draw_polyline_arrow(surface, points, color, progress=1.0, width=2, arrow_siz
 
 
 def build_frames(
-    initial_values: List[int | float | str | bool],
     operations: List[Tuple[str, List[int | float | str | bool], str]],
     interval: float,
 ) -> List[OperationFrame]:
-    linked_list = LinkedList.build_from_values("singly", initial_values)
-    nodes = [NodeState(node_id=index, value=value) for index, value in enumerate(initial_values)]
+    linked_list = LinkedList.create("singly")
+    nodes = []
     next_id = len(nodes)
     frames: List[OperationFrame] = []
     current_new_id = None
@@ -301,14 +292,13 @@ def get_frame_at_time(frames: List[OperationFrame], elapsed: float) -> Tuple[Ope
 
 
 def run_visualization(
-    values: List[int | float | str | bool],
     operations: List[Tuple[str, List[int | float | str | bool], str]],
     interval: float,
     arrow_interval: float,
     width: int,
     height: int,
 ):
-    frames = build_frames(values, operations, interval)
+    frames = build_frames(operations, interval)
 
     pygame.init()
     screen = pygame.display.set_mode((width, height))
