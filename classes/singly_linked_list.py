@@ -1,12 +1,15 @@
+import sys
+
 from classes.node import Node
 from typing import Any, Optional
+from classes.linked_list_exceptions import *
 
 class SinglyLinkedList:
     link_arrow = " \u21D2 "
 
     def __init__(self, initial_node_value: Any = None):
-        self.head: Node = Node(initial_node_value) if initial_node_value else None
-        self.tail: Node = self.head
+        self.head: Node | None = Node(initial_node_value) if initial_node_value else None
+        self.tail: Node | None = self.head
         self.size: int = 0 if initial_node_value is None else 1
 
         
@@ -15,16 +18,23 @@ class SinglyLinkedList:
 
 
     def __str__(self):
-        current_node = self.head
-        node_list = []
-        while current_node:
-            node_list.append(current_node.value)
-            current_node = current_node.next
-        node_str = self.link_arrow.join(map(str, node_list))
+        """
+        Iterates through the linked list and appends node values to a list.
+        Uses list size instead of current_node to avoid infinite loop when list has a cycle.
+        """
+
+        values = list(self.get_values(self.size))
+        node_str = self.link_arrow.join(map(str, values))
         return f"{self.size} Elements: [{node_str}]"
 
 
+
     def get_node(self, index: int) -> Node:
+        """
+        Returns node at index, or head/tail if out of bounds
+        Time complexity: O(n)
+        """
+
         if index <= 0: return self.head
         if index >= self.size - 1: return self.tail
 
@@ -35,59 +45,158 @@ class SinglyLinkedList:
         return current_node
 
 
+    def get_values(self, count: Optional[int] = None) -> list[int | float | str | bool]:
+        """
+        Returns list of node values to count size, or head/tail if out of bounds
+        Time complexity: O(n)
+        """
+
+        if count <= 0: return []
+        if count is None: count = self.size
+        index = min(count, self.size)
+        values = []
+
+        current_node = self.head
+        for _ in range(index):
+            values.append(current_node.value)
+            current_node = current_node.next
+
+        return values
+
+
     def append(self, value: int | float | str | bool):
-        new_node = Node(value)
-        if self.head:
-            self.tail.next = new_node
-        else:
-            self.head = new_node
-        self.tail = new_node
-        self.size += 1
+        """
+        Adds a new node to the end of the linked list.
+        Time complexity: O(1)
+        """
+
+        try:
+            if type(value) not in [int, float, str, bool]:
+                raise ValueTypeException(value)
+            if self.has_cycle():
+                raise CycleDetectedException(sys._getframe().f_code.co_name)
+
+            new_node = Node(value)
+            if self.head:
+                self.tail.next = new_node
+            else:
+                self.head = new_node
+            self.tail = new_node
+            self.size += 1
+        except ValueTypeException as e:
+            print(e)
+        except CycleDetectedException as e:
+            print(e)
 
 
     def append_values(self, values: list[int | float | str | bool]):
+        """
+        Adds multiple new nodes to the end of the linked list.
+        Time complexity: O(n)
+        """
+
         for value in values:
             self.append(value)
 
 
     def prepend(self, value: int | float | str | bool):
-        new_node = Node(value)
-        new_node.next = self.head
-        self.head = new_node
-        self.size += 1
+        """
+        Adds a new node to the front of the linked list.
+        Time complexity: O(1)
+        """
+        try:
+            if type(value) not in [int, float, str, bool]:
+                raise ValueTypeException(value)
+
+            new_node = Node(value)
+            new_node.next = self.head
+            self.head = new_node
+            self.size += 1
+        except ValueTypeException as e:
+            print(e)
 
 
     def prepend_values(self, values: list[int | float | str | bool]):
-        for value in values.reverse[::-1]:
+        """
+        Adding multiple nodes to the front of the linked list.
+        Preserves order
+        Time complexity: O(n)
+        """
+
+        for value in values[::-1]:
             self.prepend(value)
 
 
     def insert(self, index: int, value: int | float | str | bool):
-        if index == 0:
-            self.prepend(value)
-        elif index >= self.size:
-            self.append(value)
-        else:
-            new_node = Node(value)
-            current_node = self.get_node(index -1)
-            new_node.next = current_node.next
-            current_node.next = new_node
-            self.size += 1
+        """
+        Inserts a new node at the specified index.
+        Time complexity: O(n)
+        """
+
+        try:
+            if type(value) not in [int, float, str, bool]:
+                raise ValueTypeException(value)
+            if self.has_cycle():
+                raise CycleDetectedException(sys._getframe().f_code.co_name)
+
+            if index == 0:
+                self.prepend(value)
+            elif index >= self.size:
+                self.append(value)
+            else:
+                new_node = Node(value)
+                current_node = self.get_node(index -1)
+                new_node.next = current_node.next
+                current_node.next = new_node
+                self.size += 1
+        except ValueTypeException as e:
+            print(e)
+        except CycleDetectedException as e:
+            print(e)
+
 
 
     def replace(self, index: int, value: int | float | str | bool):
-        current_node = self.get_node(index)
-        current_node.value = value
+        """
+        Replaces the value of a node at the specified index.
+        Time complexity: O(n)
+        """
+
+        try:
+            if type(value) not in [int, float, str, bool]:
+                raise ValueTypeException(value)
+
+            current_node = self.get_node(index)
+            current_node.value = value
+        except ValueTypeException as e:
+            print(e)
 
 
     def trim(self):
-        current_node = self.get_node(self.size - 2)
-        current_node.next = None
-        self.tail = current_node
-        self.size -= 1
+        """
+        Removes the last node from the list.
+        Time complexity: O(n)
+        """
+
+        try:
+            if self.has_cycle():
+                raise CycleDetectedException(sys._getframe().f_code.co_name)
+
+            self.tail = None
+            current_node = self.get_node(self.size - 2)
+            current_node.next = None
+            self.tail = current_node
+            self.size -= 1
+        except CycleDetectedException as e:
+            print(e)
 
 
     def contains(self, value: int | float | str | bool) -> bool:
+        """
+        Checks if the list contains a node with the specified value.
+        Time complexity: O(n)
+        """
+
         current_node = self.head
         while current_node:
             if current_node.value == value: return True
@@ -97,6 +206,12 @@ class SinglyLinkedList:
 
 
     def remove(self, index: int):
+        """
+        Removes a node at the specified index.
+        Time complexity: O(n)
+        """
+
+        if index < 0 or index >= self.size: return
         if index == 0:
             self.head = self.head.next
             self.size -= 1
@@ -108,7 +223,52 @@ class SinglyLinkedList:
             self.size -= 1
 
 
+
+    def create_cycle(self, start: int):
+        """
+        Create a cycle in the linked list.
+        Accepts start index.  Start index must be less than tail index.
+        Example:
+        1 → 2 → 3 → 4 → 5
+                ↑       ↓
+                ← ← ← ← ←
+        Time complexity: O(1)
+        """
+
+        try:
+            if self.has_cycle():
+                raise CycleDetectedException(sys._getframe().f_code.co_name)
+            if start > self.size:
+                raise ValueError("Start index must come before tail index.")
+            start_node = self.get_node(start)
+            self.tail.next = start_node
+        except ValueError as e:
+            print(e)
+
+
+    def has_cycle(self) -> bool:
+        """
+        Detects if the linked list has a cycle.
+        Time complexity: O(n)
+        """
+
+        fast_runner = slow_runner = self.head
+        while fast_runner and fast_runner.next:
+            fast_runner = fast_runner.next.next
+            slow_runner = slow_runner.next
+            if fast_runner == slow_runner:
+                return True
+        return False
+
+
+
     def reverse(self):
+        """
+        Reverses the linked list in place.
+        Time complexity: O(n)
+        """
+        if self.size <= 1: return
+
         current_node = self.head
         prev_node = None
         while current_node:
