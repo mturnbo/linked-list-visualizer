@@ -41,6 +41,12 @@ def parse_operations(path: str) -> List[Tuple[str, List[int | float | str | bool
                 if len(args) != 2:
                     raise ValueError(f"Line {line_number}: replace requires a value and index.")
                 operations.append(("replace", [int(args[0]), args[1]], stripped))
+            elif command == "cycle":
+                if len(args) != 2:
+                    raise ValueError(f"Line {line_number}: create cycle requires starting and ending index.")
+                operations.append(("cycle", [int(args[0]), int(args[1])], stripped))
+            elif command == "has_cycle":
+                operations.append(("has_cycle", [], stripped))
             else:
                 raise ValueError(f"Line {line_number}: unknown command '{command}'.")
     return operations

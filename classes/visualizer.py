@@ -286,6 +286,8 @@ class LinkedListVisualizer:
                     current_new_id=current_new_id,
                     label=label,
                 ))
+            elif command in {"cycle", "has_cycle"}:
+                pass
             else:
                 raise ValueError(f"Unsupported operation '{command}'.")
 

@@ -15,11 +15,17 @@ class SinglyLinkedList:
 
 
     def __str__(self):
+        """
+        Iterates through the linked list and appends node values to a list.
+        Uses list size instead of current_node to avoid infinite loop when list has a cycle.
+        """
+
         current_node = self.head
         node_list = []
-        while current_node:
+        for _ in range(self.size):
             node_list.append(current_node.value)
             current_node = current_node.next
+
         node_str = self.link_arrow.join(map(str, node_list))
         return f"{self.size} Elements: [{node_str}]"
 

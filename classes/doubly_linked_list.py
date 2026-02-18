@@ -8,16 +8,6 @@ class DoublyLinkedList(SinglyLinkedList):
         super().__init__(initial_node_value)
 
 
-    def __str__(self):
-        current_node = self.head
-        node_list = []
-        while current_node:
-            node_list.append(current_node.value)
-            current_node = current_node.next
-        node_str = self.link_arrow.join(map(str, node_list))
-        return f"{self.size} Elements:[{self.head.value}][{self.tail.value}]: [{node_str}]"
-
-
     def get_node(self, index: int):
         """
         Retrieves a node at the specified index.

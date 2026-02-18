@@ -36,6 +36,11 @@ class LinkedList:
                     ll.remove(op[1][0])
                 case "replace":
                     ll.replace(op[1][0], op[1][1])
+                case "cycle":
+                    ll.create_cycle(op[1][0], op[1][1])
+                case "has_cycle":
+                    result = ll.has_cycle()
+                    print(f"Has cycle: {result}")
                 case _:
                     raise ValueError(f"Unknown operation type '{op[0]}' in operations file.")
 
