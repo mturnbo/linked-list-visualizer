@@ -5,24 +5,6 @@ from typing import List, Optional, Tuple
 import pygame
 
 
-DEFAULT_INTERVAL = 0.4
-DEFAULT_WIDTH = 1000
-DEFAULT_HEIGHT = 500
-DEFAULT_BG_COLOR = (16, 24, 32)
-PANEL_WIDTH = 280
-PANEL_BG = (12, 18, 26)
-PANEL_BORDER = (60, 80, 96)
-PANEL_TEXT = (220, 235, 245)
-PANEL_HIGHLIGHT = (255, 235, 160)
-NODE_COLOR = (70, 140, 220)
-NODE_NEW_COLOR = (240, 210, 70)
-NODE_REMOVE_COLOR = (220, 70, 70)
-NODE_REPLACE_COLOR = (240, 150, 60)
-NODE_EDGE_COLOR = (18, 38, 36)
-TEXT_COLOR = (230, 245, 248)
-ARROW_COLOR = (200, 220, 230)
-
-
 @dataclass
 class NodeState:
     node_id: int
@@ -53,12 +35,40 @@ class OperationFrame:
 
 
 class LinkedListVisualizer:
-    def __init__(self, operations: List[Tuple[str, List[int | float | str | bool], str]], width: int, height: int, node_interval: float, arrow_interval: float):
+    DEFAULT_INTERVAL = 0.4
+    DEFAULT_WIDTH = 1000
+    DEFAULT_HEIGHT = 500
+    DEFAULT_BG_COLOR = (16, 24, 32)
+    PANEL_WIDTH = 280
+    PANEL_BG = (12, 18, 26)
+    PANEL_BORDER = (60, 80, 96)
+    PANEL_TEXT = (220, 235, 245)
+    PANEL_HIGHLIGHT = (255, 235, 160)
+    NODE_COLOR = (70, 140, 220)
+    NODE_NEW_COLOR = (240, 210, 70)
+    NODE_REMOVE_COLOR = (220, 70, 70)
+    NODE_REPLACE_COLOR = (240, 150, 60)
+    NODE_EDGE_COLOR = (18, 38, 36)
+    TEXT_COLOR = (230, 245, 248)
+    ARROW_COLOR = (200, 220, 230)
+    
+    def __init__(self, operations: List[Tuple[str, List[int | float | str | bool], str]], width: int = DEFAULT_WIDTH, height: int = DEFAULT_HEIGHT, node_interval: float = DEFAULT_INTERVAL, arrow_interval: float = DEFAULT_INTERVAL):
         self.operations = operations
         self.width = width
         self.height = height
         self.node_interval = node_interval
         self.arrow_interval = arrow_interval
+
+
+    def configure(self, params):
+        if params.node_interval:
+            self.node_interval = params.node_interval
+        if params.arrow_interval:
+            self.arrow_interval = params.arrow_interval
+        if params.width:
+            self.width = params.width
+        if params.height:
+            self.height = params.height
 
 
     def clamp(self, value: float, min_value: float, max_value: float) -> float:
@@ -77,7 +87,7 @@ class LinkedListVisualizer:
     def layout_nodes(self, nodes: List[NodeState], width: int, height: int) -> List[NodeVisual]:
         count = max(1, len(nodes))
         margin = 80
-        usable_width = max(200, width - margin * 2 - PANEL_WIDTH)
+        usable_width = max(200, width - margin * 2 - self.PANEL_WIDTH)
         min_spacing = 180
         max_per_row = max(1, int(usable_width // min_spacing) + 1)
         per_row = min(count, max_per_row)
@@ -90,7 +100,7 @@ class LinkedListVisualizer:
         for index, node in enumerate(nodes):
             row = index // per_row
             col = index % per_row
-            x = int(PANEL_WIDTH + margin + col * spacing_x)
+            x = int(self.PANEL_WIDTH + margin + col * spacing_x)
             y = int(margin + row * spacing_y)
             visuals.append(NodeVisual(node.node_id, node.value, (x, y), row, col))
         return visuals
@@ -336,13 +346,13 @@ class LinkedListVisualizer:
                 blink_on = False
 
             visuals = self.layout_nodes(nodes_render, self.width, self.height)
-            screen.fill(DEFAULT_BG_COLOR)
+            screen.fill(self.DEFAULT_BG_COLOR)
 
-            panel_rect = pygame.Rect(20, 20, PANEL_WIDTH - 40, self.height - 40)
-            pygame.draw.rect(screen, PANEL_BG, panel_rect)
-            pygame.draw.rect(screen, PANEL_BORDER, panel_rect, 2)
+            panel_rect = pygame.Rect(20, 20, self.PANEL_WIDTH - 40, self.height - 40)
+            pygame.draw.rect(screen, self.PANEL_BG, panel_rect)
+            pygame.draw.rect(screen, self.PANEL_BORDER, panel_rect, 2)
 
-            panel_title = font.render("Operations", True, PANEL_TEXT)
+            panel_title = font.render("Operations", True, self.PANEL_TEXT)
             screen.blit(panel_title, (panel_rect.x + 16, panel_rect.y + 14))
 
             line_height = 22
@@ -352,9 +362,9 @@ class LinkedListVisualizer:
             visible_ops = frames[start_index:end_index]
             for idx, op_frame in enumerate(visible_ops):
                 op_index = start_index + idx
-                color = PANEL_TEXT
+                color = self.PANEL_TEXT
                 if op_index == frame_index:
-                    color = PANEL_HIGHLIGHT
+                    color = self.PANEL_HIGHLIGHT
                 text_surface = panel_font.render(op_frame.label, True, color)
                 screen.blit(text_surface, (panel_rect.x + 16, panel_rect.y + 48 + idx * line_height))
 
@@ -367,28 +377,28 @@ class LinkedListVisualizer:
                 radius_map[visual.node_id] = radius
                 x, y = visual.position
 
-                color = NODE_COLOR
+                color = self.NODE_COLOR
                 if frame.op_type == "add":
                     if visual.node_id == frame.added_id:
-                        color = NODE_NEW_COLOR
+                        color = self.NODE_NEW_COLOR
                     elif frame.fade_id is not None and visual.node_id == frame.fade_id:
-                        color = self.lerp_color(NODE_NEW_COLOR, NODE_COLOR, progress)
+                        color = self.lerp_color(self.NODE_NEW_COLOR, self.NODE_COLOR, progress)
                 elif frame.current_new_id is not None and visual.node_id == frame.current_new_id:
-                    color = NODE_NEW_COLOR
+                    color = self.NODE_NEW_COLOR
                 if frame.op_type == "remove" and blink_on and visual.node_id == frame.removed_id:
-                    color = NODE_REMOVE_COLOR
+                    color = self.NODE_REMOVE_COLOR
                 if frame.op_type == "replace" and visual.node_id == frame.replaced_id:
                     if progress < replace_phase:
                         if blink_on:
-                            color = NODE_REPLACE_COLOR
+                            color = self.NODE_REPLACE_COLOR
                     else:
                         fade_progress = (progress - replace_phase) / max(1 - replace_phase, 0.01)
-                        color = self.lerp_color(NODE_REPLACE_COLOR, NODE_COLOR, fade_progress)
+                        color = self.lerp_color(self.NODE_REPLACE_COLOR, self.NODE_COLOR, fade_progress)
 
                 pygame.draw.circle(screen, color, (x, y), radius)
-                pygame.draw.circle(screen, NODE_EDGE_COLOR, (x, y), radius, 3)
+                pygame.draw.circle(screen, self.NODE_EDGE_COLOR, (x, y), radius, 3)
 
-                label = font.render(str(visual.value), True, TEXT_COLOR)
+                label = font.render(str(visual.value), True, self.TEXT_COLOR)
                 label_rect = label.get_rect(center=(x, y))
                 screen.blit(label, label_rect)
 
@@ -416,7 +426,7 @@ class LinkedListVisualizer:
                     link_progress = 1.0
                     if frame.op_type == "add" and frame.added_id in {current.node_id, next_visual.node_id}:
                         link_progress = self.clamp(op_elapsed / max(self.arrow_interval, 0.01), 0.0, 1.0)
-                    self.draw_polyline_arrow(screen, path, ARROW_COLOR, progress=link_progress, width=3)
+                    self.draw_polyline_arrow(screen, path, self.ARROW_COLOR, progress=link_progress, width=3)
                 else:
                     start = (
                         current.position[0] + radius_map.get(current.node_id, 42),
@@ -429,7 +439,7 @@ class LinkedListVisualizer:
                     link_progress = 1.0
                     if frame.op_type == "add" and frame.added_id in {current.node_id, next_visual.node_id}:
                         link_progress = self.clamp(op_elapsed / max(self.arrow_interval, 0.01), 0.0, 1.0)
-                    self.draw_arrow(screen, start, end, ARROW_COLOR, progress=link_progress, width=3)
+                    self.draw_arrow(screen, start, end, self.ARROW_COLOR, progress=link_progress, width=3)
 
             pygame.display.flip()
             clock.tick(60)
