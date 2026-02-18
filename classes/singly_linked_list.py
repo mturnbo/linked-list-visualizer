@@ -20,14 +20,10 @@ class SinglyLinkedList:
         Uses list size instead of current_node to avoid infinite loop when list has a cycle.
         """
 
-        current_node = self.head
-        node_list = []
-        for _ in range(self.size):
-            node_list.append(current_node.value)
-            current_node = current_node.next
-
-        node_str = self.link_arrow.join(map(str, node_list))
+        values = list(self.get_values(self.size))
+        node_str = self.link_arrow.join(map(str, values))
         return f"{self.size} Elements: [{node_str}]"
+
 
 
     def get_node(self, index: int) -> Node:
@@ -44,6 +40,25 @@ class SinglyLinkedList:
             current_node = current_node.next
 
         return current_node
+
+
+    def get_values(self, count: Optional[int] = None) -> list[int | float | str | bool]:
+        """
+        Returns list of node values to count size, or head/tail if out of bounds
+        Time complexity: O(n)
+        """
+
+        if count <= 0: return []
+        if count is None: count = self.size
+        index = min(count, self.size)
+        values = []
+
+        current_node = self.head
+        for _ in range(index):
+            values.append(current_node.value)
+            current_node = current_node.next
+
+        return values
 
 
     def append(self, value: int | float | str | bool):
