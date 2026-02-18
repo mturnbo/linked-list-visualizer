@@ -1,7 +1,7 @@
 import math
 from dataclasses import dataclass
 from classes.linked_list import LinkedList
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Any, Dict
 import pygame
 
 
@@ -60,15 +60,15 @@ class LinkedListVisualizer:
         self.arrow_interval = arrow_interval
 
 
-    def configure(self, params):
-        if params.node_interval:
-            self.node_interval = params.node_interval
-        if params.arrow_interval:
-            self.arrow_interval = params.arrow_interval
-        if params.width:
-            self.width = params.width
-        if params.height:
-            self.height = params.height
+    def configure(self, params: Dict[str, Any]):
+        if params.get("node_interval"):
+            self.node_interval = params["node_interval"]
+        if params.get("arrow_interval"):
+            self.arrow_interval = params["arrow_interval"]
+        if params.get("width"):
+            self.width = params["width"]
+        if params.get("height"):
+            self.height = params["height"]
 
 
     def clamp(self, value: float, min_value: float, max_value: float) -> float:

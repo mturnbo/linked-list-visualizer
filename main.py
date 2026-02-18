@@ -70,7 +70,7 @@ def main():
         llv = LinkedListVisualizer(
             operations=operations
         )
-        llv.configure(args)
+        llv.configure(vars(args))
         llv.display()
     else:
         if values:
