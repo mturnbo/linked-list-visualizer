@@ -2,6 +2,8 @@ from classes.node import Node
 from classes.singly_linked_list import SinglyLinkedList
 
 class DoublyLinkedList(SinglyLinkedList):
+    link_arrow = " \u2192 "
+
     def __init__(self, initial_node_value: int | float | str | bool = None):
         super().__init__(initial_node_value)
 
@@ -12,7 +14,7 @@ class DoublyLinkedList(SinglyLinkedList):
         while current_node:
             node_list.append(current_node.value)
             current_node = current_node.next
-        node_str = " \u21D4 ".join(map(str, node_list))
+        node_str = self.link_arrow.join(map(str, node_list))
         return f"{self.size} Elements:[{self.head.value}][{self.tail.value}]: [{node_str}]"
 
 

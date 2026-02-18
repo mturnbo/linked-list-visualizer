@@ -1,13 +1,12 @@
 import argparse
 from classes.linked_list import LinkedList
 from typing import List, Tuple
-from visualization import DEFAULT_HEIGHT, DEFAULT_INTERVAL, DEFAULT_VALUES, DEFAULT_WIDTH
-from visualization import run_visualization
+from classes.visualizer import LinkedListVisualizer
 
 
 def parse_values(raw_values: str) -> List[int | float | str | bool]:
     if not raw_values:
-        return DEFAULT_VALUES
+        return []
     try:
         return [value.strip() for value in raw_values.split(",") if value.strip()]
     except ValueError as exc:
@@ -52,10 +51,10 @@ def main():
     parser.add_argument("display", choices=["print", "animate"], help="Print to command line or visualize with pygame.")
     parser.add_argument("--values", type=str, default="", help="Comma-separated list of node values.")
     parser.add_argument("--ops-file", type=str, default="", help="Path to operations text file.")
-    parser.add_argument("--interval", type=float, default=DEFAULT_INTERVAL, help="Seconds per operation.")
-    parser.add_argument("--arrow-interval", type=float, default=DEFAULT_INTERVAL, help="Seconds for arrow animation.")
-    parser.add_argument("--width", type=int, default=DEFAULT_WIDTH, help="Window width in pixels.")
-    parser.add_argument("--height", type=int, default=DEFAULT_HEIGHT, help="Window height in pixels.")
+    parser.add_argument("--node-interval", type=float, help="Seconds per operation.")
+    parser.add_argument("--arrow-interval", type=float, help="Seconds for arrow animation.")
+    parser.add_argument("--width", type=int, help="Window width in pixels.")
+    parser.add_argument("--height", type=int, help="Window height in pixels.")
     args = parser.parse_args()
 
     values = operations = []
@@ -68,14 +67,11 @@ def main():
         raise ValueError("Must specify either values or operations file.")
 
     if args.display == "animate":
-        run_visualization(
-            values=values,
-            operations=operations,
-            interval=args.interval,
-            arrow_interval=args.arrow_interval,
-            width=args.width,
-            height=args.height,
+        llv = LinkedListVisualizer(
+            operations=operations
         )
+        llv.configure(vars(args))
+        llv.display()
     else:
         if values:
             ll = LinkedList.build_from_values("singly", values)
