@@ -123,7 +123,7 @@ class SinglyLinkedList:
         Time complexity: O(n)
         """
 
-        for value in values.reverse[::-1]:
+        for value in values[::-1]:
             self.prepend(value)
 
 

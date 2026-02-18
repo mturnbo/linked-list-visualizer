@@ -1,5 +1,6 @@
 from classes.node import Node
 from classes.singly_linked_list import SinglyLinkedList
+from classes.linked_list_exceptions import *
 
 class DoublyLinkedList(SinglyLinkedList):
     link_arrow = " \u2192 "
@@ -35,14 +36,24 @@ class DoublyLinkedList(SinglyLinkedList):
         Time complexity: O(1)
         """
 
-        new_node = Node(value)
-        if self.head:
-            self.tail.next = new_node
-            new_node.prev = self.tail
-        else:
-            self.head = new_node
-        self.tail = new_node
-        self.size += 1
+        try:
+            if type(value) not in [int, float, str, bool]:
+                raise ValueTypeException(value)
+            if self.has_cycle():
+                raise CycleDetectedException(sys._getframe().f_code.co_name)
+
+            new_node = Node(value)
+            if self.head:
+                self.tail.next = new_node
+                new_node.prev = self.tail
+            else:
+                self.head = new_node
+            self.tail = new_node
+            self.size += 1
+        except ValueTypeException as e:
+            print(e)
+        except CycleDetectedException as e:
+            print(e)
 
 
     def prepend(self, value: int | float | str | bool):
@@ -51,12 +62,18 @@ class DoublyLinkedList(SinglyLinkedList):
         Time complexity: O(1)
         """
 
-        new_node = Node(value)
-        if self.head:
-            new_node.next = self.head
-            self.head.prev = new_node
-        self.head = new_node
-        self.size += 1
+        try:
+            if type(value) not in [int, float, str, bool]:
+                raise ValueTypeException(value)
+
+            new_node = Node(value)
+            if self.head:
+                new_node.next = self.head
+                self.head.prev = new_node
+            self.head = new_node
+            self.size += 1
+        except ValueTypeException as e:
+            print(e)
 
 
     def remove(self, index: int):
