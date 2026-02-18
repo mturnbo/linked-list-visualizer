@@ -19,7 +19,10 @@ class DoublyLinkedList(SinglyLinkedList):
 
 
     def get_node(self, index: int):
-        # Choose traversal direction based on index proximity
+        """
+        Retrieves a node at the specified index.
+        Time complexity: O(n)
+        """
 
         if index <= 0: return self.head
         if index >= self.size - 1: return self.tail
@@ -37,6 +40,11 @@ class DoublyLinkedList(SinglyLinkedList):
 
 
     def append(self, value: int | float | str | bool):
+        """
+        Appends a new node with the specified value to the end of the list.
+        Time complexity: O(1)
+        """
+
         new_node = Node(value)
         if self.head:
             self.tail.next = new_node
@@ -48,6 +56,11 @@ class DoublyLinkedList(SinglyLinkedList):
 
 
     def prepend(self, value: int | float | str | bool):
+        """
+        Prepends a new node with the specified value to the beginning of the list.
+        Time complexity: O(1)
+        """
+
         new_node = Node(value)
         if self.head:
             new_node.next = self.head
@@ -57,6 +70,11 @@ class DoublyLinkedList(SinglyLinkedList):
 
 
     def remove(self, index: int):
+        """
+        Removes the node at the specified index.
+        Time complexity: O(n)
+        """
+        if index < 0 or index >= self.size: return
         if index == 0:
             self.head = self.head.next
             self.head.prev = None
@@ -71,11 +89,12 @@ class DoublyLinkedList(SinglyLinkedList):
         self.size -= 1
 
 
-    def trim(self):
-        self.remove(self.size - 1)
-
-
     def contains(self, value: int):
+        """
+        Determines if the list contains a node with the specified value.
+        Time complexity: O(n)
+        """
+
         forward = self.head
         backward = self.tail
 
@@ -88,6 +107,11 @@ class DoublyLinkedList(SinglyLinkedList):
 
 
     def reverse(self):
+        """
+        Reverses the order of nodes in the list.
+        Time complexity: O(n)
+        """
+
         current_node = self.head
         while current_node:
             current_node.prev, current_node.next = current_node.next, current_node.prev
