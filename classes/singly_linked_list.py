@@ -2,6 +2,8 @@ from classes.node import Node
 from typing import Any, Optional
 
 class SinglyLinkedList:
+    link_arrow = " \u21D2 "
+
     def __init__(self, initial_node_value: Any = None):
         self.head: Node = Node(initial_node_value) if initial_node_value else None
         self.tail: Node = self.head
@@ -18,7 +20,7 @@ class SinglyLinkedList:
         while current_node:
             node_list.append(current_node.value)
             current_node = current_node.next
-        node_str = " \u21D2 ".join(map(str, node_list))
+        node_str = self.link_arrow.join(map(str, node_list))
         return f"{self.size} Elements: [{node_str}]"
 
 

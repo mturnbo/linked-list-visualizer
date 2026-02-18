@@ -51,14 +51,15 @@ class LinkedListVisualizer:
     NODE_EDGE_COLOR = (18, 38, 36)
     TEXT_COLOR = (230, 245, 248)
     ARROW_COLOR = (200, 220, 230)
-    
-    def __init__(self, operations: List[Tuple[str, List[int | float | str | bool], str]], width: int = DEFAULT_WIDTH, height: int = DEFAULT_HEIGHT, node_interval: float = DEFAULT_INTERVAL, arrow_interval: float = DEFAULT_INTERVAL):
+
+    def __init__(self, operations: List[Tuple[str, List[int | float | str | bool], str]], width: int = DEFAULT_WIDTH,
+                 height: int = DEFAULT_HEIGHT, node_interval: float = DEFAULT_INTERVAL,
+                 arrow_interval: float = DEFAULT_INTERVAL):
         self.operations = operations
         self.width = width
         self.height = height
         self.node_interval = node_interval
         self.arrow_interval = arrow_interval
-
 
     def configure(self, params: Dict[str, Any]):
         if params.get("node_interval"):
@@ -70,10 +71,8 @@ class LinkedListVisualizer:
         if params.get("height"):
             self.height = params["height"]
 
-
     def clamp(self, value: float, min_value: float, max_value: float) -> float:
         return max(min_value, min(value, max_value))
-
 
     def lerp_color(self, color_a, color_b, t: float):
         t = self.clamp(t, 0.0, 1.0)
@@ -82,7 +81,6 @@ class LinkedListVisualizer:
             int(color_a[1] + (color_b[1] - color_a[1]) * t),
             int(color_a[2] + (color_b[2] - color_a[2]) * t),
         )
-
 
     def layout_nodes(self, nodes: List[NodeState], width: int, height: int) -> List[NodeVisual]:
         count = max(1, len(nodes))
@@ -104,7 +102,6 @@ class LinkedListVisualizer:
             y = int(margin + row * spacing_y)
             visuals.append(NodeVisual(node.node_id, node.value, (x, y), row, col))
         return visuals
-
 
     def draw_arrow(self, surface, start, end, color, progress=1.0, width=2, arrow_size=12):
         progress = self.clamp(progress, 0.0, 1.0)
@@ -169,7 +166,6 @@ class LinkedListVisualizer:
             final_start = segments[-1][0]
             final_end = segments[-1][1]
             self.draw_arrow(surface, final_start, final_end, color, progress=1.0, width=width, arrow_size=arrow_size)
-
 
     def build_frames(
             self,
@@ -295,7 +291,6 @@ class LinkedListVisualizer:
 
         return frames
 
-
     def get_frame_at_time(self, frames: List[OperationFrame], elapsed: float) -> Tuple[OperationFrame, float, int]:
         if not frames:
             empty_frame = OperationFrame("idle", 1.0, [], [])
@@ -308,7 +303,6 @@ class LinkedListVisualizer:
                 progress = self.clamp(frame_elapsed / max(frame.duration, 0.01), 0.0, 1.0)
                 return frame, progress, index
         return frames[-1], 1.0, len(frames) - 1
-
 
     def display(self):
         frames = self.build_frames(self.operations, self.node_interval)
@@ -445,7 +439,3 @@ class LinkedListVisualizer:
             clock.tick(60)
 
         pygame.quit()
-
-
-
-
