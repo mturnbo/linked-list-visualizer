@@ -31,6 +31,7 @@ class OperationFrame:
     removed_id: Optional[int] = None
     replaced_id: Optional[int] = None
     current_new_id: Optional[int] = None
+    cycle_link: Optional[Tuple[int, int]] = None
     label: str = ""
 
 
@@ -48,9 +49,10 @@ class LinkedListVisualizer:
     NODE_NEW_COLOR = (240, 210, 70)
     NODE_REMOVE_COLOR = (220, 70, 70)
     NODE_REPLACE_COLOR = (240, 150, 60)
-    NODE_EDGE_COLOR = (18, 38, 36)
+    NODE_EDGE_COLOR = (200, 200, 200)
     TEXT_COLOR = (230, 245, 248)
     ARROW_COLOR = (200, 220, 230)
+    CYCLE_COLOR = (80, 200, 120)
 
     def __init__(self, operations: List[Tuple[str, List[int | float | str | bool], str]], width: int = DEFAULT_WIDTH,
                  height: int = DEFAULT_HEIGHT, node_interval: float = DEFAULT_INTERVAL,
@@ -177,6 +179,7 @@ class LinkedListVisualizer:
         next_id = len(nodes)
         frames: List[OperationFrame] = []
         current_new_id = None
+        current_cycle: Optional[Tuple[int, int]] = None
 
         for command, args, label in operations:
             size_before = len(nodes)
@@ -197,6 +200,7 @@ class LinkedListVisualizer:
                     added_id=new_node.node_id,
                     fade_id=current_new_id,
                     current_new_id=new_node.node_id,
+                    cycle_link=current_cycle,
                     label=label,
                 ))
                 current_new_id = new_node.node_id
@@ -215,6 +219,7 @@ class LinkedListVisualizer:
                     added_id=new_node.node_id,
                     fade_id=current_new_id,
                     current_new_id=new_node.node_id,
+                    cycle_link=current_cycle,
                     label=label,
                 ))
                 current_new_id = new_node.node_id
@@ -238,6 +243,7 @@ class LinkedListVisualizer:
                     added_id=new_node.node_id,
                     fade_id=current_new_id,
                     current_new_id=new_node.node_id,
+                    cycle_link=current_cycle,
                     label=label,
                 ))
                 current_new_id = new_node.node_id
@@ -263,6 +269,7 @@ class LinkedListVisualizer:
                     nodes_after=[NodeState(node.node_id, node.value) for node in nodes],
                     removed_id=removed_node.node_id,
                     current_new_id=current_new_id,
+                    cycle_link=current_cycle,
                     label=label,
                 ))
             elif command == "replace":
@@ -284,10 +291,46 @@ class LinkedListVisualizer:
                     nodes_after=[NodeState(node.node_id, node.value) for node in nodes],
                     replaced_id=nodes[replace_index].node_id,
                     current_new_id=current_new_id,
+                    cycle_link=current_cycle,
                     label=label,
                 ))
-            elif command in {"cycle", "has_cycle"}:
-                pass
+            elif command == "cycle":
+                if size_before == 0:
+                    continue
+                start_index = args[0]
+                linked_list.create_cycle(start_index)
+                start_node_id = None
+                end_node_id = None
+
+                if 0 <= start_index <= len(nodes) - 2:
+                    try:
+                        start_node_id = nodes[start_index].node_id
+                        end_node_id = nodes[-1].node_id
+                    except IndexError:
+                        start_node_id = None
+                        end_node_id = None
+                if start_node_id is not None and end_node_id is not None:
+                    current_cycle = (end_node_id, start_node_id)
+                frames.append(OperationFrame(
+                    op_type="cycle",
+                    duration=interval,
+                    nodes_before=nodes_before,
+                    nodes_after=[NodeState(node.node_id, node.value) for node in nodes],
+                    current_new_id=current_new_id,
+                    cycle_link=current_cycle,
+                    label=label,
+                ))
+            elif command == "has_cycle":
+                result = linked_list.has_cycle()
+                frames.append(OperationFrame(
+                    op_type="has_cycle",
+                    duration=interval,
+                    nodes_before=nodes_before,
+                    nodes_after=[NodeState(node.node_id, node.value) for node in nodes],
+                    current_new_id=current_new_id,
+                    cycle_link=current_cycle,
+                    label=f"{label} => {result}",
+                ))
             else:
                 raise ValueError(f"Unsupported operation '{command}'.")
 
@@ -365,11 +408,12 @@ class LinkedListVisualizer:
                 screen.blit(text_surface, (panel_rect.x + 16, panel_rect.y + 48 + idx * line_height))
 
             radius_map = {}
+            visuals_by_id = {}
             for visual in visuals:
                 scale = 1.0
                 if frame.op_type == "add" and visual.node_id == frame.added_id:
                     scale = 0.5 + 0.5 * progress
-                radius = int(42 * scale)
+                radius = int(32 * scale)
                 radius_map[visual.node_id] = radius
                 x, y = visual.position
 
@@ -397,6 +441,7 @@ class LinkedListVisualizer:
                 label = font.render(str(visual.value), True, self.TEXT_COLOR)
                 label_rect = label.get_rect(center=(x, y))
                 screen.blit(label, label_rect)
+                visuals_by_id[visual.node_id] = visual
 
             op_elapsed = progress * frame.duration
             for index in range(len(visuals) - 1):
@@ -436,6 +481,39 @@ class LinkedListVisualizer:
                     if frame.op_type == "add" and frame.added_id in {current.node_id, next_visual.node_id}:
                         link_progress = self.clamp(op_elapsed / max(self.arrow_interval, 0.01), 0.0, 1.0)
                     self.draw_arrow(screen, start, end, self.ARROW_COLOR, progress=link_progress, width=3)
+
+            if frame.cycle_link:
+                cycle_end_id, cycle_start_id = frame.cycle_link
+                cycle_end = visuals_by_id.get(cycle_end_id)
+                cycle_start = visuals_by_id.get(cycle_start_id)
+                if cycle_end and cycle_start:
+                    start_radius = radius_map.get(cycle_end.node_id, 32)
+                    end_radius = radius_map.get(cycle_start.node_id, 32)
+                    start_point = (
+                        cycle_end.position[0] + start_radius,
+                        cycle_end.position[1],
+                    )
+                    end_point = (
+                        cycle_start.position[0] - end_radius,
+                        cycle_start.position[1],
+                    )
+                    min_y = min(cycle_end.position[1], cycle_start.position[1])
+                    max_y = max(cycle_end.position[1], cycle_start.position[1])
+                    mid_y = min_y - 70
+                    if mid_y < 30:
+                        mid_y = max_y + 70
+                    path = [
+                        start_point,
+                        (start_point[0] + 30, start_point[1]),
+                        (start_point[0] + 30, mid_y),
+                        (end_point[0] - 30, mid_y),
+                        (end_point[0] - 30, end_point[1]),
+                        end_point,
+                    ]
+                    cycle_progress = 1.0
+                    if frame.op_type == "cycle":
+                        cycle_progress = self.clamp(op_elapsed / max(self.arrow_interval, 0.01), 0.0, 1.0)
+                    self.draw_polyline_arrow(screen, path, self.CYCLE_COLOR, progress=cycle_progress, width=3)
 
             pygame.display.flip()
             clock.tick(60)

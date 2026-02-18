@@ -10,5 +10,6 @@ append 22
 append 26
 append 27
 append 50
-cycle 5 11
+has_cycle
+cycle 5
 has_cycle
