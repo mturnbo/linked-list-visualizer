@@ -1,12 +1,20 @@
-# Linked List Visualization
-**Linked List Visualizer**
-This project visualizes linked list operations (append, prepend, insert, remove, replace) using a pygame UI. It supports parsing command-line arguments for initial values, window sizing, and animation timing, plus loading operations from a text file.
+# Linked List Visualizater
+### This project allows for the creation of linked lists with the following operations
+* append
+* prepend
+* insert
+* remove
+* replace
+* reverse
 
-**Requirements**
-- Python 3.10+
+Linked List can be generated from a comma-separated list of values or from an operations file.  They can be
+printed to the command line or displayed graphically with animation.
+
+### Requirements
+- Python 3.12+
 - `pygame` installed in your environment
 
-**Install**
+### Installation
 Create/activate a virtual environment, then install dependencies:
 ```bash
 python -m venv .venv
@@ -14,24 +22,32 @@ source .venv/bin/activate
 pip install pygame
 ```
 
-**Usage**
-Run with a comma-separated list of values (defaults to `1,2,3,4,5`):
+## Usage
+Run with a comma-separated list of values (defaults to `1,2,3,4,5,6,7,8,9,10`):
 ```bash
-python main.py --values 1,2,3,4,5
+> python main.py singly print --values 1,2,3,4,5
+
+Singly Linked List | 5 Elements:
+[1 ⇒ 2 ⇒ 3 ⇒ 4 ⇒ 5]
 ```
 
 Run from an operations file (examples included: `ops1.txt`, `ops2.txt`):
 ```bash
-python main.py --operations-file examples/ops1.txt
+> python main.py doubly print --operations-file examples/ops3.txt
+
+Doubly Linked List | 13 Elements:
+[1 ⇔ 4 ⇔ 2 ⇔ 6 ⇔ 7 ⇔ 8 ⇔ 10 ⇔ 15 ⇔ 20 ⇔ 22 ⇔ 26 ⇔ 27 ⇔ 50]
 ```
 
 If an operations file is provided and `--values` is omitted, the visualization starts from an empty list and only replays the operations.
 
 **Arguments**
+- `lltype`: `singly` or `doubly` linked list
+- `display`: `print` or `animate`
 - `--values`: Comma-separated list of node values (default uses `DEFAULT_VALUES`).
 - `--operations-file`: Path to a text file of operations (see format below).
-- `--interval`: Seconds per operation (default `0.8`).
-- `--arrow-interval`: Seconds for arrow animation (default `0.5`).
+- `--node-interval`: Seconds per node animation (default `0.4`).
+- `--arrow-interval`: Seconds for arrow animation (default `0.4`).
 - `--width`: Window width in pixels (default `1000`).
 - `--height`: Window height in pixels (default `500`).
 
@@ -42,6 +58,8 @@ Each line is a single operation. Blank lines and lines starting with `#` are ign
 - `insert <index> <value>`
 - `remove <index>` (alias: `delete`)
 - `replace <index> <value>`
+- `cycle <start_index>`
+- `has_cycle`
 
 **Example: `ops1.txt`**
 ```text
