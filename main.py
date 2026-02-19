@@ -2,6 +2,7 @@ import argparse
 from classes.linked_list import LinkedList
 from typing import List, Tuple
 from classes.visualizer import LinkedListVisualizer
+from constants import DEFAULT_VALUES
 
 
 def parse_values(raw_values: str) -> List[int | float | str | bool]:
@@ -72,7 +73,8 @@ def main():
     elif args.ops_file:
         operations = parse_operations(args.ops_file)
     else:
-        raise ValueError("Must specify either values or operations file.")
+        values = DEFAULT_VALUES
+        operations = [("append", [value], f"append {value}") for value in values]
 
     if args.display == "animate":
         llv = LinkedListVisualizer(

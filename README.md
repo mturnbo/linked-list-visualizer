@@ -1,12 +1,20 @@
-# Linked List Visualization
-**Linked List Visualizer**
-This project visualizes linked list operations (append, prepend, insert, remove, replace) using a pygame UI. It supports parsing command-line arguments for initial values, window sizing, and animation timing, plus loading operations from a text file.
+# Linked List Visualizater
+### This project allows for the creation of linked lists with the following operations
+* append
+* prepend
+* insert
+* remove
+* replace
+* reverse
 
-**Requirements**
+Linked List can be generated from a comma-separated list of values or from an operations file.  They can be
+printed to the command line or displayed graphically with animation.
+
+### Requirements
 - Python 3.10+
 - `pygame` installed in your environment
 
-**Install**
+### Installation
 Create/activate a virtual environment, then install dependencies:
 ```bash
 python -m venv .venv
@@ -14,15 +22,21 @@ source .venv/bin/activate
 pip install pygame
 ```
 
-**Usage**
-Run with a comma-separated list of values (defaults to `1,2,3,4,5`):
+## Usage
+Run with a comma-separated list of values (defaults to `1,2,3,4,5,6,7,8,9,10`):
 ```bash
-python main.py singly print --values 1,2,3,4,5
+> python main.py singly print --values 1,2,3,4,5
+
+Singly Linked List | 5 Elements:
+[1 ⇒ 2 ⇒ 3 ⇒ 4 ⇒ 5]
 ```
 
 Run from an operations file (examples included: `ops1.txt`, `ops2.txt`):
 ```bash
-python main.py double animate --operations-file examples/ops1.txt
+> python main.py doubly print --operations-file examples/ops3.txt
+
+Doubly Linked List | 13 Elements:
+[1 ⇔ 4 ⇔ 2 ⇔ 6 ⇔ 7 ⇔ 8 ⇔ 10 ⇔ 15 ⇔ 20 ⇔ 22 ⇔ 26 ⇔ 27 ⇔ 50]
 ```
 
 If an operations file is provided and `--values` is omitted, the visualization starts from an empty list and only replays the operations.
