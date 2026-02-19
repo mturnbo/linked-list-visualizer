@@ -5,12 +5,13 @@ from classes.linked_list import LinkedList
 
 
 class LinkedListShell(cmd.Cmd):
-    # intro = 'Welcome to Linked List Visualizer. Type help or ? to list commands.\n'
-    # prompt = '(LLV) '
+    """
+    Interactive shell for manipulating linked lists.
+    """
 
     def __init__(self, completekey='tab', stdin=None, stdout=None):
         super().__init__(completekey, stdin, stdout)
-        self.prompt = 'LLV > '
+        self.prompt = 'LLV> '
         self.ll: SinglyLinkedList | DoublyLinkedList | None = None
         print('Welcome to Linked List Visualizer. Type help or ? to list commands.\n')
 
@@ -29,7 +30,19 @@ class LinkedListShell(cmd.Cmd):
 
 
     def do_append(self, arg):
-        self.ll.append(arg)
+        values = arg.split(",")
+        self.ll.append_values(values)
+
+
+    def do_prepend(self, arg):
+        values = arg.split(",")
+        self.ll.prepend_values(values)
+
+
+    def do_clear(self, arg):
+        self.ll.clear()
+        print("Cleared the linked list.")
+
 
     def do_show(self, arg):
         self.ll.show()

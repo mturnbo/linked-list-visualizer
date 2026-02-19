@@ -277,5 +277,25 @@ class SinglyLinkedList:
         self.head, self.tail = self.tail, self.head
 
 
+    def clear(self, iterate: bool = False):
+        """
+        Clears the linked list, removing all nodes and resetting size to 0.
+        In Python, you can remove all nodes from a linked list by simply setting the head of the list to None.
+        This makes the entire list unreachable, and Python's garbage collector automatically reclaims the memory.
+        An iterative option is included. This method is useful for understanding how deletion works in languages
+        that require manual memory management,
+        """
+        if iterate:
+            current = self.head
+            while current:
+                # Store the next node to avoid losing the reference
+                next_node = current.next
+                current = next_node
+            self.head = None
+        else:
+            self.head = self.tail = None
+            self.size = 0
+
+
     def show(self):
         print(self)
