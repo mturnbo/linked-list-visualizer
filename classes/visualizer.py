@@ -422,12 +422,13 @@ class LinkedListVisualizer:
                 pygame.draw.circle(screen, color, (x, y), radius)
                 pygame.draw.circle(screen, NODE_EDGE_COLOR, (x, y), radius, 3)
 
-                label = font.render(str(visual.value), True, self.TEXT_COLOR)
+                label = font.render(str(visual.value), True, TEXT_COLOR)
                 label_rect = label.get_rect(center=(x, y))
                 screen.blit(label, label_rect)
                 visuals_by_id[visual.node_id] = visual
 
             op_elapsed = progress * frame.duration
+            bidirectional = self.lltype == "doubly"
             for index in range(len(visuals) - 1):
                 current = visuals[index]
                 next_visual = visuals[index + 1]
@@ -452,6 +453,9 @@ class LinkedListVisualizer:
                     if frame.op_type == "add" and frame.added_id in {current.node_id, next_visual.node_id}:
                         link_progress = self.clamp(op_elapsed / max(self.arrow_interval, 0.01), 0.0, 1.0)
                     self.draw_polyline_arrow(screen, path, ARROW_COLOR, progress=link_progress, width=3)
+                    if bidirectional:
+                        reverse_path = list(reversed(path))
+                        self.draw_polyline_arrow(screen, reverse_path, ARROW_COLOR, progress=link_progress, width=3)
                 else:
                     start = (
                         current.position[0] + radius_map.get(current.node_id, 42),
@@ -465,6 +469,8 @@ class LinkedListVisualizer:
                     if frame.op_type == "add" and frame.added_id in {current.node_id, next_visual.node_id}:
                         link_progress = self.clamp(op_elapsed / max(self.arrow_interval, 0.01), 0.0, 1.0)
                     self.draw_arrow(screen, start, end, ARROW_COLOR, progress=link_progress, width=3)
+                    if bidirectional:
+                        self.draw_arrow(screen, end, start, ARROW_COLOR, progress=link_progress, width=3)
 
             if frame.cycle_link:
                 cycle_end_id, cycle_start_id = frame.cycle_link
