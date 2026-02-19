@@ -11,7 +11,7 @@ Linked List can be generated from a comma-separated list of values or from an op
 printed to the command line or displayed graphically with animation.
 
 ### Requirements
-- Python 3.10+
+- Python 3.12+
 - `pygame` installed in your environment
 
 ### Installation
