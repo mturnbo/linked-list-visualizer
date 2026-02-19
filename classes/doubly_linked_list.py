@@ -1,12 +1,22 @@
 from classes.node import Node
 from classes.singly_linked_list import SinglyLinkedList
+from constants import PRINT_ARROW_DOUBLE as LINK_ARROW
 from classes.linked_list_exceptions import *
 
 class DoublyLinkedList(SinglyLinkedList):
-    link_arrow = " \u2192 "
-
     def __init__(self, initial_node_value: int | float | str | bool = None):
         super().__init__(initial_node_value)
+
+
+    def __str__(self):
+        """
+        Iterates through the linked list and appends node values to a list.
+        Uses list size instead of current_node to avoid infinite loop when list has a cycle.
+        """
+
+        values = list(self.get_values(self.size))
+        node_str = LINK_ARROW.join(map(str, values))
+        return f"\nDoubly Linked List | {self.size} Elements:\n[{node_str}]\n"
 
 
     def get_node(self, index: int):

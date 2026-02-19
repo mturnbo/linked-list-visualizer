@@ -1,12 +1,10 @@
 import sys
-
 from classes.node import Node
 from typing import Any, Optional
+from constants import PRINT_ARROW_SINGLE as LINK_ARROW
 from classes.linked_list_exceptions import *
 
 class SinglyLinkedList:
-    link_arrow = " \u21D2 "
-
     def __init__(self, initial_node_value: Any = None):
         self.head: Node | None = Node(initial_node_value) if initial_node_value else None
         self.tail: Node | None = self.head
@@ -24,8 +22,8 @@ class SinglyLinkedList:
         """
 
         values = list(self.get_values(self.size))
-        node_str = self.link_arrow.join(map(str, values))
-        return f"{self.size} Elements: [{node_str}]"
+        node_str = LINK_ARROW.join(map(str, values))
+        return f"\nSingly Linked List | {self.size} Elements:\n[{node_str}]\n"
 
 
 

@@ -1,0 +1,15 @@
+append 2
+append 4
+append 6
+append 7
+append 8
+append 10
+append 15
+append 20
+append 22
+append 26
+append 27
+append 50
+prepend 1
+insert 3 2
+remove 1
