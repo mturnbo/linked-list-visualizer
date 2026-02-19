@@ -122,6 +122,15 @@ class DoublyLinkedList(SinglyLinkedList):
 
         return False
 
+    def create_cycle(self, start: int):
+        """Overriding parent method because doubly linked list cannot have a cycle."""
+        pass
+
+
+    def has_cycle(self):
+        """Overriding parent method because doubly linked list cannot have a cycle."""
+        return False
+
 
     def reverse(self):
         """

@@ -279,22 +279,23 @@ class LinkedListVisualizer:
                     label=label,
                 ))
             elif command == "cycle":
-                if size_before == 0:
-                    continue
-                start_index = args[0]
-                linked_list.create_cycle(start_index)
-                start_node_id = None
-                end_node_id = None
+                if self.lltype == "singly":
+                    if size_before == 0:
+                        continue
+                    start_index = args[0]
+                    linked_list.create_cycle(start_index)
+                    start_node_id = None
+                    end_node_id = None
 
-                if 0 <= start_index <= len(nodes) - 2:
-                    try:
-                        start_node_id = nodes[start_index].node_id
-                        end_node_id = nodes[-1].node_id
-                    except IndexError:
-                        start_node_id = None
-                        end_node_id = None
-                if start_node_id is not None and end_node_id is not None:
-                    current_cycle = (end_node_id, start_node_id)
+                    if 0 <= start_index <= len(nodes) - 2:
+                        try:
+                            start_node_id = nodes[start_index].node_id
+                            end_node_id = nodes[-1].node_id
+                        except IndexError:
+                            start_node_id = None
+                            end_node_id = None
+                    if start_node_id is not None and end_node_id is not None:
+                        current_cycle = (end_node_id, start_node_id)
                 frames.append(OperationFrame(
                     op_type="cycle",
                     duration=interval,
