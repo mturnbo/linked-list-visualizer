@@ -49,11 +49,13 @@ def parse_operations(path: str) -> List[Tuple[str, List[int | float | str | bool
                 operations.append(("has_cycle", [], stripped))
             else:
                 raise ValueError(f"Line {line_number}: unknown command '{command}'.")
+
     return operations
 
 
 def main():
     parser = argparse.ArgumentParser(description="Visualize a linked list with pygame.")
+    parser.add_argument("lltype", choices=["singly", "doubly"], default = "singly", help="Linked List type.  Singly or Doubly.")
     parser.add_argument("display", choices=["print", "animate"], help="Print to command line or visualize with pygame.")
     parser.add_argument("--values", type=str, default="", help="Comma-separated list of node values.")
     parser.add_argument("--ops-file", type=str, default="", help="Path to operations text file.")
@@ -74,15 +76,16 @@ def main():
 
     if args.display == "animate":
         llv = LinkedListVisualizer(
+            lltype=args.lltype,
             operations=operations
         )
         llv.configure(vars(args))
         llv.display()
     else:
         if values:
-            ll = LinkedList.build_from_values("singly", values)
+            ll = LinkedList.build_from_values(args.lltype, values)
         else:
-            ll = LinkedList.build_from_ops("singly", operations)
+            ll = LinkedList.build_from_ops(args.lltype, operations)
         ll.show()
 
 

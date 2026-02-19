@@ -112,3 +112,18 @@ def test_reverse():
     ll.reverse()
     assert ll.head.value == 2
     assert ll.tail.value == 1
+
+
+def test_str_empty_list():
+    ll = DoublyLinkedList()
+    result = str(ll)
+    assert result == "\nDoubly Linked List | 0 Elements:\n[]\n"
+
+
+def test_str_multiple_elements():
+    ll = DoublyLinkedList()
+    ll.append(1)
+    ll.append(2)
+    ll.append(3)
+    result = str(ll)
+    assert result == "\nDoubly Linked List | 3 Elements:\n[1 \u21D4 2 \u21D4 3]\n"
