@@ -113,3 +113,18 @@ def test_reverse():
     assert ll.head.value == 2
     assert ll.tail.value == 1
 
+
+def test_str_empty_list():
+    ll = SinglyLinkedList()
+    result = str(ll)
+    assert result == "\nSingly Linked List | 0 Elements:\n[]\n"
+
+
+def test_str_multiple_elements():
+    ll = SinglyLinkedList()
+    ll.append(1)
+    ll.append(2)
+    ll.append(3)
+    result = str(ll)
+    assert result == "\nSingly Linked List | 3 Elements:\n[1 \u21D2 2 \u21D2 3]\n"
+

@@ -37,9 +37,10 @@ class OperationFrame:
 
 
 class LinkedListVisualizer:
-    def __init__(self, operations: List[Tuple[str, List[int | float | str | bool], str]], width: int = DEFAULT_WIDTH,
+    def __init__(self, lltype:str, operations: List[Tuple[str, List[int | float | str | bool], str]], width: int = DEFAULT_WIDTH,
                  height: int = DEFAULT_HEIGHT, node_interval: float = DEFAULT_INTERVAL,
                  arrow_interval: float = DEFAULT_INTERVAL):
+        self.lltype = lltype
         self.operations = operations
         self.width = width
         self.height = height
@@ -157,7 +158,7 @@ class LinkedListVisualizer:
             operations: List[Tuple[str, List[int | float | str | bool], str]],
             interval: float,
     ) -> List[OperationFrame]:
-        linked_list = LinkedList.create("singly")
+        linked_list = LinkedList.create(self.lltype)
         nodes = []
         next_id = len(nodes)
         frames: List[OperationFrame] = []
