@@ -17,21 +17,23 @@ pip install pygame
 **Usage**
 Run with a comma-separated list of values (defaults to `1,2,3,4,5`):
 ```bash
-python main.py --values 1,2,3,4,5
+python main.py singly print --values 1,2,3,4,5
 ```
 
 Run from an operations file (examples included: `ops1.txt`, `ops2.txt`):
 ```bash
-python main.py --operations-file examples/ops1.txt
+python main.py double animate --operations-file examples/ops1.txt
 ```
 
 If an operations file is provided and `--values` is omitted, the visualization starts from an empty list and only replays the operations.
 
 **Arguments**
+- `lltype`: `singly` or `doubly` linked list
+- `display`: `print` or `animate`
 - `--values`: Comma-separated list of node values (default uses `DEFAULT_VALUES`).
 - `--operations-file`: Path to a text file of operations (see format below).
-- `--interval`: Seconds per operation (default `0.8`).
-- `--arrow-interval`: Seconds for arrow animation (default `0.5`).
+- `--node-interval`: Seconds per node animation (default `0.4`).
+- `--arrow-interval`: Seconds for arrow animation (default `0.4`).
 - `--width`: Window width in pixels (default `1000`).
 - `--height`: Window height in pixels (default `500`).
 
@@ -42,6 +44,8 @@ Each line is a single operation. Blank lines and lines starting with `#` are ign
 - `insert <index> <value>`
 - `remove <index>` (alias: `delete`)
 - `replace <index> <value>`
+- `cycle <start_index>`
+- `has_cycle`
 
 **Example: `ops1.txt`**
 ```text
