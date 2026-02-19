@@ -39,6 +39,11 @@ class LinkedListShell(cmd.Cmd):
         self.ll.prepend_values(values)
 
 
+    def do_reverse(self, arg):
+        self.ll.reverse()
+        print("Reversed the linked list.")
+
+
     def do_clear(self, arg):
         self.ll.clear()
         print("Cleared the linked list.")

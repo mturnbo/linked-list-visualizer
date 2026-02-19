@@ -92,9 +92,17 @@ class SinglyLinkedList:
         Adds multiple new nodes to the end of the linked list.
         Time complexity: O(n)
         """
-
-        for value in values:
-            self.append(value)
+        try:
+            if not all(x in in [int, float, str, bool] for x in values):
+                raise ValueTypeException(values)
+            if self.has_cycle():
+                raise CycleDetectedException(sys._getframe().f_code.co_name)
+            for value in values:
+                self.append(value)
+        except ValueTypeException as e:
+            print(e)
+        except CycleDetectedException as e:
+            print(e)
 
 
     def prepend(self, value: int | float | str | bool):
@@ -286,6 +294,7 @@ class SinglyLinkedList:
         that require manual memory management,
         """
         if iterate:
+            # Time complexity: O(n)
             current = self.head
             while current:
                 # Store the next node to avoid losing the reference
@@ -293,6 +302,7 @@ class SinglyLinkedList:
                 current = next_node
             self.head = None
         else:
+            # Time complexity: O(1)
             self.head = self.tail = None
             self.size = 0
 
