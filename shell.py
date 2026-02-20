@@ -39,6 +39,11 @@ class LinkedListShell(cmd.Cmd):
         self.ll.prepend_values(values)
 
 
+    def do_insert(self, arg):
+        index, value = arg.split(" ")
+        self.ll.insert(int(index), value)
+
+
     def do_reverse(self, arg):
         self.ll.reverse()
         print("Reversed the linked list.")

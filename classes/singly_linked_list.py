@@ -1,8 +1,9 @@
 import sys
 from classes.node import Node
-from typing import Any, Optional
+from typing import Optional
 from constants import PRINT_ARROW_SINGLE as LINK_ARROW
 from classes.linked_list_exceptions import *
+from utils import filter_values
 
 class SinglyLinkedList:
     def __init__(self, initial_node_value: Any = None):
@@ -81,10 +82,13 @@ class SinglyLinkedList:
                 self.head = new_node
             self.tail = new_node
             self.size += 1
+            return True
         except ValueTypeException as e:
             print(e)
         except CycleDetectedException as e:
             print(e)
+
+        return False
 
 
     def append_values(self, values: list[int | float | str | bool]):
@@ -92,17 +96,11 @@ class SinglyLinkedList:
         Adds multiple new nodes to the end of the linked list.
         Time complexity: O(n)
         """
-        try:
-            if not all(x in in [int, float, str, bool] for x in values):
-                raise ValueTypeException(values)
-            if self.has_cycle():
-                raise CycleDetectedException(sys._getframe().f_code.co_name)
-            for value in values:
-                self.append(value)
-        except ValueTypeException as e:
-            print(e)
-        except CycleDetectedException as e:
-            print(e)
+        filtered_values = filter_values(values)
+        for value in filtered_values:
+            self.append(value)
+
+        return len(filtered_values)
 
 
     def prepend(self, value: int | float | str | bool):
@@ -118,8 +116,11 @@ class SinglyLinkedList:
             new_node.next = self.head
             self.head = new_node
             self.size += 1
+            return True
         except ValueTypeException as e:
             print(e)
+
+        return False
 
 
     def prepend_values(self, values: list[int | float | str | bool]):
@@ -129,8 +130,11 @@ class SinglyLinkedList:
         Time complexity: O(n)
         """
 
-        for value in values[::-1]:
+        filtered_values = filter_values(values)
+        for value in filtered_values[::-1]:
             self.prepend(value)
+
+        return len(filtered_values)
 
 
     def insert(self, index: int, value: int | float | str | bool):
@@ -155,11 +159,13 @@ class SinglyLinkedList:
                 new_node.next = current_node.next
                 current_node.next = new_node
                 self.size += 1
+                return True
         except ValueTypeException as e:
             print(e)
         except CycleDetectedException as e:
             print(e)
 
+        return False
 
 
     def replace(self, index: int, value: int | float | str | bool):
@@ -174,8 +180,11 @@ class SinglyLinkedList:
 
             current_node = self.get_node(index)
             current_node.value = value
+            return True
         except ValueTypeException as e:
             print(e)
+
+        return False
 
 
     def trim(self):
@@ -193,8 +202,11 @@ class SinglyLinkedList:
             current_node.next = None
             self.tail = current_node
             self.size -= 1
+            return True
         except CycleDetectedException as e:
             print(e)
+
+        return False
 
 
     def contains(self, value: int | float | str | bool) -> bool:
@@ -217,7 +229,7 @@ class SinglyLinkedList:
         Time complexity: O(n)
         """
 
-        if index < 0 or index >= self.size: return
+        if index < 0 or index >= self.size: return False
         if index == 0:
             self.head = self.head.next
             self.size -= 1
@@ -228,6 +240,7 @@ class SinglyLinkedList:
             current_node.next = current_node.next.next
             self.size -= 1
 
+        return True
 
 
     def create_cycle(self, start: int):
@@ -248,8 +261,11 @@ class SinglyLinkedList:
                 raise ValueError("Start index must come before tail index.")
             start_node = self.get_node(start)
             self.tail.next = start_node
+            return True
         except ValueError as e:
             print(e)
+
+        return False
 
 
     def has_cycle(self) -> bool:
@@ -273,7 +289,7 @@ class SinglyLinkedList:
         Reverses the linked list in place.
         Time complexity: O(n)
         """
-        if self.size <= 1: return
+        if self.size <= 1: return False
 
         current_node = self.head
         prev_node = None
@@ -283,6 +299,7 @@ class SinglyLinkedList:
             prev_node = current_node
             current_node = next_node
         self.head, self.tail = self.tail, self.head
+        return True
 
 
     def clear(self, iterate: bool = False):
@@ -305,6 +322,8 @@ class SinglyLinkedList:
             # Time complexity: O(1)
             self.head = self.tail = None
             self.size = 0
+
+        return True
 
 
     def show(self):

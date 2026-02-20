@@ -1,5 +1,6 @@
 from classes.singly_linked_list import SinglyLinkedList
 from classes.doubly_linked_list import DoublyLinkedList
+from utils import filter_values
 from typing import List, Tuple, Any
 
 
@@ -18,9 +19,8 @@ class LinkedList:
 
     @staticmethod
     def build_from_values(ll_type: str, values: List[Any]) -> SinglyLinkedList | DoublyLinkedList:
-        """Uses list of values to build a linked list."""
-
-        filtered_values = list(filter(lambda x: type(x) in [int, float, str, bool], values))
+        """Uses a list of values to build a linked list."""
+        filtered_values = filter_values(values)
         ll = LinkedList.create(ll_type)
         ll.append_values(filtered_values)
 
@@ -28,9 +28,8 @@ class LinkedList:
 
 
     @staticmethod
-    def build_from_ops(ll_type: str, operations: List[Tuple[str, List[int | float | str | bool], str]]):
-        """Uses list of operations to build a linked list."""
-
+    def build_from_ops(ll_type: str, operations: List[Tuple[str, List[int | float | str | bool], str]]) -> SinglyLinkedList | DoublyLinkedList:
+        """Uses a list of operations to build a linked list."""
         ll = LinkedList.create(ll_type)
         for op in operations:
             match op[0]:
