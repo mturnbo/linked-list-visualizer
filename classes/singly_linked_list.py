@@ -268,6 +268,25 @@ class SinglyLinkedList:
         return False
 
 
+    def cycle_index(self) -> int:
+        """
+        Finds the index of the first node in the cycle.
+        Time complexity: O(n)?
+        """
+        if self.tail.next is not None:
+            if self.tail.next == self.head:
+                return 0
+            else:
+                node_list = []
+                current_node = self.head
+                for _ in range(self.size - 1):
+                    node_list.append(current_node)
+                    current_node = current_node.next
+                return node_list.index(self.tail.next)
+
+        return -1
+
+
     def has_cycle(self) -> bool:
         """
         Detects if the linked list has a cycle.

@@ -44,6 +44,33 @@ class LinkedListShell(cmd.Cmd):
         self.ll.insert(int(index), value)
 
 
+    def do_cycle(self, arg):
+        """Create a cycle in the linked list. Usage: cycle [index]"""
+        index = int(arg)
+        self.ll.create_cycle(index)
+        print(f"Created a cycle at index {index}.")
+
+
+    def do_has_cycle(self, arg):
+        index = self.ll.cycle_index()
+        if index != -1:
+            print(f"Linked list contains a cycle at node {index}")
+        else:
+            print("Linked list does not contain a cycle.")
+
+
+    def do_remove(self, arg):
+        index = int(arg)
+        self.ll.remove(index)
+        print(f"Removed node at index {index}.")
+
+
+    def do_replace(self, arg):
+        index, value = arg.split(" ")
+        self.ll.replace(int(index), value)
+        print(f"Replaced node at index {index} with value {value}.")
+
+
     def do_reverse(self, arg):
         self.ll.reverse()
         print("Reversed the linked list.")
