@@ -14,6 +14,16 @@ class LinkedListShell(cmd.Cmd):
         self.prompt = 'LLV> '
         self.ll: SinglyLinkedList | DoublyLinkedList | None = None
         print('Welcome to Linked List Visualizer. Type help or ? to list commands.\n')
+        self.do_entry('')
+
+
+    def do_entry(self, arg):
+        ll_type = input("What type of linked list would you like to create? [singly, doubly]: ")  # Using input() within the cmd loop
+        if ll_type not in ["singly", "doubly"]:
+            print("Invalid linked list type. Please try again. Type 'create singly' or 'create doubly'.")
+            return
+        self.ll = LinkedList.create(ll_type)
+        print(f"Created a new {ll_type} linked list.")
 
 
     def do_greet(self, args):
@@ -25,6 +35,9 @@ class LinkedListShell(cmd.Cmd):
     def do_create(self, arg):
         """Create a new linked list. Usage: create [singly|doubly]"""
         ll_type = arg.lower()
+        if ll_type not in ["singly", "doubly"]:
+            print("Invalid linked list type. Please try again. Type 'create singly' or 'create doubly'.")
+            return
         self.ll = LinkedList.build_from_values(ll_type, [])
         print(f"Created a new {ll_type} linked list.")
 
@@ -52,7 +65,7 @@ class LinkedListShell(cmd.Cmd):
 
 
     def do_has_cycle(self, arg):
-        index = self.ll.cycle_index()
+        index = self.ll.get_cycle_index()
         if index != -1:
             print(f"Linked list contains a cycle at node {index}")
         else:
