@@ -1,8 +1,9 @@
 import sys
 from classes.node import Node
-from typing import Any, Optional
-from constants import PRINT_ARROW_SINGLE as LINK_ARROW
+from typing import Optional
+from constants import PRINT_ARROW_SINGLE as LINK_ARROW, PRINT_ARROW_UP, PRINT_ARROW_DOWN, PRINT_ARROW_LEFT
 from classes.linked_list_exceptions import *
+from utils import filter_values
 
 class SinglyLinkedList:
     def __init__(self, initial_node_value: Any = None):
@@ -21,10 +22,28 @@ class SinglyLinkedList:
         Uses list size instead of current_node to avoid infinite loop when list has a cycle.
         """
 
-        values = list(self.get_values(self.size))
-        node_str = LINK_ARROW.join(map(str, values))
-        return f"\nSingly Linked List | {self.size} Elements:\n[{node_str}]\n"
+        values = self.get_values()
+        header_str = f"\nSingly Linked List | {self.size} Elements:"
+        node_str = f"[{LINK_ARROW.join(map(str, values))}]"
+        cycle_str = ""
+        cycle_index = self.get_cycle_index()
+        if cycle_index > -1:
+            # get length to cycle index
+            value_lengths = [len(str(value)) for value in values]
+            length_to_cycle_index = sum(value_lengths[:cycle_index]) + (cycle_index * len(LINK_ARROW)) + 1
+            spaces = " " * length_to_cycle_index
+            cycle_str += f"{spaces}{PRINT_ARROW_UP}"
 
+            # get length to tail
+            length_to_tail = len(node_str) - len(spaces) - 3
+            spaces = " " * length_to_tail
+            cycle_str += f"{spaces}{PRINT_ARROW_DOWN}"
+
+            spaces = " " * (length_to_cycle_index + 1)
+            back_arrows = f"{PRINT_ARROW_LEFT} " * (length_to_tail // 2 + 1)
+            cycle_str += f"\n{spaces}{back_arrows}"
+
+        return f"{header_str}\n{node_str}\n{cycle_str}\n"
 
 
     def get_node(self, index: int) -> Node:
@@ -49,8 +68,8 @@ class SinglyLinkedList:
         Time complexity: O(n)
         """
 
-        if count <= 0: return []
         if count is None: count = self.size
+        if count <= 0: return []
         index = min(count, self.size)
         values = []
 
@@ -81,10 +100,13 @@ class SinglyLinkedList:
                 self.head = new_node
             self.tail = new_node
             self.size += 1
+            return True
         except ValueTypeException as e:
             print(e)
         except CycleDetectedException as e:
             print(e)
+
+        return False
 
 
     def append_values(self, values: list[int | float | str | bool]):
@@ -92,9 +114,11 @@ class SinglyLinkedList:
         Adds multiple new nodes to the end of the linked list.
         Time complexity: O(n)
         """
-
-        for value in values:
+        filtered_values = filter_values(values)
+        for value in filtered_values:
             self.append(value)
+
+        return len(filtered_values)
 
 
     def prepend(self, value: int | float | str | bool):
@@ -110,8 +134,11 @@ class SinglyLinkedList:
             new_node.next = self.head
             self.head = new_node
             self.size += 1
+            return True
         except ValueTypeException as e:
             print(e)
+
+        return False
 
 
     def prepend_values(self, values: list[int | float | str | bool]):
@@ -121,8 +148,11 @@ class SinglyLinkedList:
         Time complexity: O(n)
         """
 
-        for value in values[::-1]:
+        filtered_values = filter_values(values)
+        for value in filtered_values[::-1]:
             self.prepend(value)
+
+        return len(filtered_values)
 
 
     def insert(self, index: int, value: int | float | str | bool):
@@ -147,11 +177,13 @@ class SinglyLinkedList:
                 new_node.next = current_node.next
                 current_node.next = new_node
                 self.size += 1
+                return True
         except ValueTypeException as e:
             print(e)
         except CycleDetectedException as e:
             print(e)
 
+        return False
 
 
     def replace(self, index: int, value: int | float | str | bool):
@@ -166,8 +198,11 @@ class SinglyLinkedList:
 
             current_node = self.get_node(index)
             current_node.value = value
+            return True
         except ValueTypeException as e:
             print(e)
+
+        return False
 
 
     def trim(self):
@@ -185,8 +220,11 @@ class SinglyLinkedList:
             current_node.next = None
             self.tail = current_node
             self.size -= 1
+            return True
         except CycleDetectedException as e:
             print(e)
+
+        return False
 
 
     def contains(self, value: int | float | str | bool) -> bool:
@@ -209,7 +247,7 @@ class SinglyLinkedList:
         Time complexity: O(n)
         """
 
-        if index < 0 or index >= self.size: return
+        if index < 0 or index >= self.size: return False
         if index == 0:
             self.head = self.head.next
             self.size -= 1
@@ -220,6 +258,7 @@ class SinglyLinkedList:
             current_node.next = current_node.next.next
             self.size -= 1
 
+        return True
 
 
     def create_cycle(self, start: int):
@@ -240,8 +279,11 @@ class SinglyLinkedList:
                 raise ValueError("Start index must come before tail index.")
             start_node = self.get_node(start)
             self.tail.next = start_node
+            return True
         except ValueError as e:
             print(e)
+
+        return False
 
 
     def has_cycle(self) -> bool:
@@ -254,10 +296,29 @@ class SinglyLinkedList:
         while fast_runner and fast_runner.next:
             fast_runner = fast_runner.next.next
             slow_runner = slow_runner.next
-            if fast_runner == slow_runner:
+            if fast_runner is slow_runner:
                 return True
         return False
 
+
+    def get_cycle_index(self) -> int:
+        """
+        Finds the index of the first node in the cycle.
+        Time complexity: O(n)?
+        TODO: Add different methods and time complexity explanations for calculating cycle index.
+        """
+
+        if self.tail.next is not None:
+            if self.tail.next == self.head:
+                return 0
+            else:
+                current_node = self.head
+                for i in range(self.size - 1):
+                    if self.tail.next is current_node:
+                        return i
+                    current_node = current_node.next
+
+        return -1
 
 
     def reverse(self):
@@ -265,7 +326,7 @@ class SinglyLinkedList:
         Reverses the linked list in place.
         Time complexity: O(n)
         """
-        if self.size <= 1: return
+        if self.size <= 1: return False
 
         current_node = self.head
         prev_node = None
@@ -275,6 +336,32 @@ class SinglyLinkedList:
             prev_node = current_node
             current_node = next_node
         self.head, self.tail = self.tail, self.head
+
+        return True
+
+
+    def clear(self, iterate: bool = False):
+        """
+        Clears the linked list, removing all nodes and resetting size to 0.
+        In Python, you can remove all nodes from a linked list by simply setting the head of the list to None.
+        This makes the entire list unreachable, and Python's garbage collector automatically reclaims the memory.
+        An iterative option is included. This method is useful for understanding how deletion works in languages
+        that require manual memory management,
+        """
+        if iterate:
+            # Time complexity: O(n)
+            current = self.head
+            while current:
+                # Store the next node to avoid losing the reference
+                next_node = current.next
+                current = next_node
+            self.head = None
+        else:
+            # Time complexity: O(1)
+            self.head = self.tail = None
+            self.size = 0
+
+        return True
 
 
     def show(self):
