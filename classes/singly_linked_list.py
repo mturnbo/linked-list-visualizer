@@ -88,6 +88,8 @@ class SinglyLinkedList:
         """
 
         try:
+            if not value:
+                raise EmptyValueException(value)
             if type(value) not in [int, float, str, bool]:
                 raise ValueTypeException(value)
             if self.has_cycle():
@@ -101,6 +103,8 @@ class SinglyLinkedList:
             self.tail = new_node
             self.size += 1
             return True
+        except EmptyValueException as e:
+            print(e)
         except ValueTypeException as e:
             print(e)
         except CycleDetectedException as e:
@@ -127,6 +131,8 @@ class SinglyLinkedList:
         Time complexity: O(1)
         """
         try:
+            if not value:
+                raise EmptyValueException(value)
             if type(value) not in [int, float, str, bool]:
                 raise ValueTypeException(value)
 
@@ -135,6 +141,8 @@ class SinglyLinkedList:
             self.head = new_node
             self.size += 1
             return True
+        except EmptyValueException as e:
+            print(e)
         except ValueTypeException as e:
             print(e)
 

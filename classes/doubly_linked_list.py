@@ -47,6 +47,8 @@ class DoublyLinkedList(SinglyLinkedList):
         """
 
         try:
+            if not value:
+                raise EmptyValueException(value)
             if type(value) not in [int, float, str, bool]:
                 raise ValueTypeException(value)
             if self.has_cycle():
@@ -61,6 +63,8 @@ class DoublyLinkedList(SinglyLinkedList):
             self.tail = new_node
             self.size += 1
             return True
+        except EmptyValueException as e:
+            print(e)
         except ValueTypeException as e:
             print(e)
         except CycleDetectedException as e:
@@ -76,6 +80,8 @@ class DoublyLinkedList(SinglyLinkedList):
         """
 
         try:
+            if not value:
+                raise EmptyValueException(value)
             if type(value) not in [int, float, str, bool]:
                 raise ValueTypeException(value)
 
@@ -86,6 +92,8 @@ class DoublyLinkedList(SinglyLinkedList):
             self.head = new_node
             self.size += 1
             return True
+        except EmptyValueException as e:
+            print(e)
         except ValueTypeException as e:
             print(e)
 
