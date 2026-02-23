@@ -17,3 +17,4 @@ def test_doubly_lltype_creates_singly_linked_list():
 def test_doubly_lltype_creates_doubly_linked_list():
     ll = LinkedList.create("doubly")
     assert isinstance(ll, DoublyLinkedList)
+

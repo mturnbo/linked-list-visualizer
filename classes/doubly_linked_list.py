@@ -47,6 +47,8 @@ class DoublyLinkedList(SinglyLinkedList):
         """
 
         try:
+            if not value:
+                raise EmptyValueException(value)
             if type(value) not in [int, float, str, bool]:
                 raise ValueTypeException(value)
             if self.has_cycle():
@@ -60,10 +62,15 @@ class DoublyLinkedList(SinglyLinkedList):
                 self.head = new_node
             self.tail = new_node
             self.size += 1
+            return True
+        except EmptyValueException as e:
+            print(e)
         except ValueTypeException as e:
             print(e)
         except CycleDetectedException as e:
             print(e)
+
+        return False
 
 
     def prepend(self, value: int | float | str | bool):
@@ -73,6 +80,8 @@ class DoublyLinkedList(SinglyLinkedList):
         """
 
         try:
+            if not value:
+                raise EmptyValueException(value)
             if type(value) not in [int, float, str, bool]:
                 raise ValueTypeException(value)
 
@@ -82,8 +91,13 @@ class DoublyLinkedList(SinglyLinkedList):
                 self.head.prev = new_node
             self.head = new_node
             self.size += 1
+            return True
+        except EmptyValueException as e:
+            print(e)
         except ValueTypeException as e:
             print(e)
+
+        return False
 
 
     def remove(self, index: int):
@@ -91,7 +105,7 @@ class DoublyLinkedList(SinglyLinkedList):
         Removes the node at the specified index.
         Time complexity: O(n)
         """
-        if index < 0 or index >= self.size: return
+        if index < 0 or index >= self.size: return False
         if index == 0:
             self.head = self.head.next
             self.head.prev = None
@@ -104,6 +118,7 @@ class DoublyLinkedList(SinglyLinkedList):
             current_node.next = next_node
             next_node.prev = current_node
         self.size -= 1
+        return True
 
 
     def contains(self, value: int):
@@ -122,9 +137,10 @@ class DoublyLinkedList(SinglyLinkedList):
 
         return False
 
+
     def create_cycle(self, start: int):
         """Overriding parent method because doubly linked list cannot have a cycle."""
-        pass
+        return False
 
 
     def has_cycle(self):
@@ -143,3 +159,4 @@ class DoublyLinkedList(SinglyLinkedList):
             current_node.prev, current_node.next = current_node.next, current_node.prev
             current_node = current_node.prev
         self.head, self.tail = self.tail, self.head
+        return True
