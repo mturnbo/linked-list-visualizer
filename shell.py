@@ -2,7 +2,6 @@ import cmd
 from classes.singly_linked_list import SinglyLinkedList
 from classes.doubly_linked_list import DoublyLinkedList
 from classes.linked_list import LinkedList
-from classes.visualizer import LinkedListVisualizer
 from typing import List, Tuple
 from utils import str_to_ll_type
 
@@ -44,7 +43,7 @@ class LinkedListShell(cmd.Cmd):
         self.ll.append_values(values)
         status = f"Added {len(values)} node(s) to the end of the linked list."
         for value in values:
-            self.append_operations("append", [value], status)
+            self.append_operations("append", [value], f"Added  value {value} to the end of the linked list.")
         print(status)
 
 
@@ -119,18 +118,6 @@ class LinkedListShell(cmd.Cmd):
 
     def append_operations(self, operation: str, values: list[int | float | str | bool], description: str):
         self.operations.append((operation, values, description))
-
-
-
-
-    # def do_animate(self, arg):
-    #     llv = LinkedListVisualizer(
-    #         lltype=self.ll_type,
-    #         operations=operations
-    #     )
-    #     llv.configure(vars(args))
-    #     llv.display()
-    #     self.ll.animate()
 
 
     def do_quit(self, arg):
