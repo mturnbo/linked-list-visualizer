@@ -1,7 +1,7 @@
 import sys
 from classes.node import Node
 from typing import Optional
-from constants import PRINT_ARROW_SINGLE as LINK_ARROW, PRINT_ARROW_UP, PRINT_ARROW_DOWN, PRINT_ARROW_LEFT
+from constants import PRINT_ARROW_SINGLE as LINK_ARROW, PRINT_ARROW_UP, PRINT_ARROW_DOWN, PRINT_ARROW_LEFT, YELLOW as PRINT_COLOR, RESET
 from classes.linked_list_exceptions import *
 from utils import filter_values
 
@@ -26,8 +26,8 @@ class SinglyLinkedList:
         header_str = f"\nSingly Linked List | {self.size} Elements:"
         node_str = f"[{LINK_ARROW.join(map(str, values))}]"
         cycle_str = ""
-        cycle_index = self.get_cycle_index()
-        if cycle_index > -1:
+        cycle_index = self.get_cycle_start_index()
+        if cycle_index:
             # get length to cycle index
             value_lengths = [len(str(value)) for value in values]
             length_to_cycle_index = sum(value_lengths[:cycle_index]) + (cycle_index * len(LINK_ARROW)) + 1
@@ -43,7 +43,7 @@ class SinglyLinkedList:
             back_arrows = f"{PRINT_ARROW_LEFT} " * (length_to_tail // 2 + 1)
             cycle_str += f"\n{spaces}{back_arrows}"
 
-        return f"{header_str}\n{node_str}\n{cycle_str}\n"
+        return f"{PRINT_COLOR}{header_str}\n{node_str}\n{cycle_str}\n{RESET}"
 
 
     def get_node(self, index: int) -> Node:
@@ -309,24 +309,50 @@ class SinglyLinkedList:
         return False
 
 
-    def get_cycle_index(self) -> int:
+    def get_cycle_start_index(self, method:int = 1) -> Optional[int]:
         """
-        Finds the index of the first node in the cycle.
-        Time complexity: O(n)?
-        TODO: Add different methods and time complexity explanations for calculating cycle index.
+        Returns the index of the node where the cycle begins, or None if no cycle.
         """
 
-        if self.tail.next is not None:
-            if self.tail.next == self.head:
-                return 0
+        if method == 1:
+            """
+            Floyd's Cycle-Finding Algorithm
+            Time complexity: O(n)
+            """
+            fast_runner = slow_runner = self.head
+            while fast_runner and fast_runner.next:
+                fast_runner = fast_runner.next.next
+                slow_runner = slow_runner.next
+                if fast_runner is slow_runner:
+                    break
             else:
-                current_node = self.head
-                for i in range(self.size - 1):
-                    if self.tail.next is current_node:
-                        return i
-                    current_node = current_node.next
+                return None
 
-        return -1
+            slow_runner = self.head
+            index = 0
+            while slow_runner is not fast_runner:
+                slow_runner = slow_runner.next
+                fast_runner = fast_runner.next
+                index += 1
+
+            return index
+
+        if method == 2:
+            """
+            Use the pointer at the tail to find the start of the cycle.
+            Time complexity: O(1)
+            """
+            if self.tail.next is not None:
+                if self.tail.next == self.head:
+                    return 0
+                else:
+                    current_node = self.head
+                    for i in range(self.size - 1):
+                        if self.tail.next is current_node:
+                            return i
+                        current_node = current_node.next
+
+        return None
 
 
     def reverse(self):
