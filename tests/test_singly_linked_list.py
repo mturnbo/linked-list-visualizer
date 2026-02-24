@@ -128,3 +128,28 @@ def test_str_multiple_elements():
     result = str(ll)
     assert result == "\nSingly Linked List | 3 Elements:\n[1 \u21D2 2 \u21D2 3]\n"
 
+
+def test_has_cycle_methods():
+    ll = SinglyLinkedList()
+    for value in [1, 2, 3, 4, 5]:
+        ll.append(value)
+    assert ll.has_cycle(method=1) is False
+    assert ll.has_cycle(method=2) is False
+
+    ll.create_cycle(2)
+    assert ll.has_cycle(method=1) is True
+    assert ll.has_cycle(method=2) is True
+
+
+def test_get_cycle_start_index_methods():
+    ll = SinglyLinkedList()
+    for value in [1, 2, 3, 4, 5]:
+        ll.append(value)
+    assert ll.get_cycle_start_index(method=1) is None
+    assert ll.get_cycle_start_index(method=2) is None
+    assert ll.get_cycle_start_index(method=3) is None
+
+    ll.create_cycle(2)
+    assert ll.get_cycle_start_index(method=1) == 2
+    assert ll.get_cycle_start_index(method=2) == 2
+    assert ll.get_cycle_start_index(method=3) == 2

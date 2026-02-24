@@ -294,18 +294,45 @@ class SinglyLinkedList:
         return False
 
 
-    def has_cycle(self) -> bool:
+    def has_cycle(self, method:int = 1) -> bool:
         """
         Detects if the linked list has a cycle.
-        Time complexity: O(n)
         """
+        match method:
+            case 1:
+                """
+                Floyd's Cycle-Finding Algorithm
+                Time complexity: O(n)
+                """
+                fast_runner = slow_runner = self.head
+                while fast_runner and fast_runner.next:
+                    fast_runner = fast_runner.next.next
+                    slow_runner = slow_runner.next
+                    if fast_runner is slow_runner:
+                        return True
+            case 2:
+                """
+                Brent's Cycle-Finding Algorithm
+                Time complexity: O(n)
+                """
+                if self.head is None or self.head.next is None:
+                    return False
 
-        fast_runner = slow_runner = self.head
-        while fast_runner and fast_runner.next:
-            fast_runner = fast_runner.next.next
-            slow_runner = slow_runner.next
-            if fast_runner is slow_runner:
-                return True
+                power = 1
+                lam = 1
+                slow_runner = self.head
+                fast_runner = self.head.next
+
+                while fast_runner:
+                    if slow_runner is fast_runner:
+                        return True
+                    if lam == power:
+                        slow_runner = fast_runner
+                        power *= 2
+                        lam = 0
+                    fast_runner = fast_runner.next
+                    lam += 1
+
         return False
 
 
@@ -313,44 +340,81 @@ class SinglyLinkedList:
         """
         Returns the index of the node where the cycle begins, or None if no cycle.
         """
-
-        if method == 1:
-            """
-            Floyd's Cycle-Finding Algorithm
-            Time complexity: O(n)
-            """
-            fast_runner = slow_runner = self.head
-            while fast_runner and fast_runner.next:
-                fast_runner = fast_runner.next.next
-                slow_runner = slow_runner.next
-                if fast_runner is slow_runner:
-                    break
-            else:
-                return None
-
-            slow_runner = self.head
-            index = 0
-            while slow_runner is not fast_runner:
-                slow_runner = slow_runner.next
-                fast_runner = fast_runner.next
-                index += 1
-
-            return index
-
-        if method == 2:
-            """
-            Use the pointer at the tail to find the start of the cycle.
-            Time complexity: O(1)
-            """
-            if self.tail.next is not None:
-                if self.tail.next == self.head:
-                    return 0
+        match method:
+            case 1:
+                """
+                Floyd's Cycle-Finding Algorithm
+                Time complexity: O(n)
+                """
+                fast_runner = slow_runner = self.head
+                while fast_runner and fast_runner.next:
+                    fast_runner = fast_runner.next.next
+                    slow_runner = slow_runner.next
+                    if fast_runner is slow_runner:
+                        break
                 else:
-                    current_node = self.head
-                    for i in range(self.size - 1):
-                        if self.tail.next is current_node:
-                            return i
-                        current_node = current_node.next
+                    return None
+
+                slow_runner = self.head
+                index = 0
+                while slow_runner is not fast_runner:
+                    slow_runner = slow_runner.next
+                    fast_runner = fast_runner.next
+                    index += 1
+
+                return index
+
+            case 2:
+                """
+                Brent's Cycle-Finding Algorithm
+                Time complexity: O(n)
+                """
+                if self.head is None or self.head.next is None:
+                    return None
+
+                power = 1
+                lam = 1
+                tortoise = self.head
+                hare = self.head.next
+
+                while hare and tortoise is not hare:
+                    if lam == power:
+                        tortoise = hare
+                        power *= 2
+                        lam = 0
+                    hare = hare.next
+                    lam += 1
+
+                if hare is None:
+                    return None
+
+                tortoise = self.head
+                hare = self.head
+                for _ in range(lam):
+                    hare = hare.next
+
+                index = 0
+                while tortoise is not hare:
+                    tortoise = tortoise.next
+                    hare = hare.next
+                    index += 1
+
+                return index
+
+            case 3:
+                """
+                Use the pointer at the tail to find the start of the cycle.
+                Time complexity: O(1)
+                """
+                if self.tail.next is not None:
+                    if self.tail.next == self.head:
+                        return 0
+                    else:
+                        current_node = self.head
+                        for i in range(self.size - 1):
+                            if self.tail.next is current_node:
+                                return i
+                            current_node = current_node.next
 
         return None
 
