@@ -10,6 +10,7 @@ GREEN = '\033[92m'
 BLUE = '\033[94m'
 YELLOW = "\033[1;33m"
 LIGHT_BLUE = "\033[1;34m"
+PRINT_COLOR = YELLOW
 RESET = '\033[0m'   # reset color to default
 
 DEFAULT_INTERVAL = 0.4

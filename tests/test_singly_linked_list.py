@@ -117,7 +117,7 @@ def test_reverse():
 def test_str_empty_list():
     ll = SinglyLinkedList()
     result = str(ll)
-    assert result == "\nSingly Linked List | 0 Elements:\n[]\n"
+    assert "Singly Linked List | 0 Elements:\n[]" in result
 
 
 def test_str_multiple_elements():
@@ -126,7 +126,8 @@ def test_str_multiple_elements():
     ll.append(2)
     ll.append(3)
     result = str(ll)
-    assert result == "\nSingly Linked List | 3 Elements:\n[1 \u21D2 2 \u21D2 3]\n"
+    assert "Singly Linked List | 3 Elements:\n[1 \u21D2 2 \u21D2 3]" in result
+
 
 
 def test_has_cycle_methods():

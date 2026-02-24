@@ -1,6 +1,6 @@
 from classes.node import Node
 from classes.singly_linked_list import SinglyLinkedList
-from constants import PRINT_ARROW_DOUBLE as LINK_ARROW, YELLOW as PRINT_COLOR, RESET
+from constants import PRINT_ARROW_DOUBLE as LINK_ARROW, PRINT_COLOR, RESET
 from classes.linked_list_exceptions import *
 
 class DoublyLinkedList(SinglyLinkedList):
@@ -15,10 +15,10 @@ class DoublyLinkedList(SinglyLinkedList):
         """
 
         values = list(self.get_values(self.size))
-        header_str = f"\nDoubly Linked List | {self.size} Elements:"
+        header_str = f"Doubly Linked List | {self.size} Elements:"
         node_str = f"[{LINK_ARROW.join(map(str, values))}]"
 
-        return f"{PRINT_COLOR}\n{header_str}\n[{node_str}]\n{RESET}"
+        return f"\n{PRINT_COLOR}{header_str}\n{node_str}{RESET}\n"
 
 
     def get_node(self, index: int):

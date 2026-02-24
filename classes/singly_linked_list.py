@@ -1,7 +1,7 @@
 import sys
 from classes.node import Node
 from typing import Optional
-from constants import PRINT_ARROW_SINGLE as LINK_ARROW, PRINT_ARROW_UP, PRINT_ARROW_DOWN, PRINT_ARROW_LEFT, YELLOW as PRINT_COLOR, RESET
+from constants import PRINT_ARROW_SINGLE as LINK_ARROW, PRINT_ARROW_UP, PRINT_ARROW_DOWN, PRINT_ARROW_LEFT, PRINT_COLOR, RESET
 from classes.linked_list_exceptions import *
 from utils import filter_values
 
@@ -23,7 +23,7 @@ class SinglyLinkedList:
         """
 
         values = self.get_values()
-        header_str = f"\nSingly Linked List | {self.size} Elements:"
+        header_str = f"Singly Linked List | {self.size} Elements:"
         node_str = f"[{LINK_ARROW.join(map(str, values))}]"
         cycle_str = ""
         cycle_index = self.get_cycle_start_index()
@@ -43,7 +43,7 @@ class SinglyLinkedList:
             back_arrows = f"{PRINT_ARROW_LEFT} " * (length_to_tail // 2 + 1)
             cycle_str += f"\n{spaces}{back_arrows}"
 
-        return f"{PRINT_COLOR}{header_str}\n{node_str}\n{cycle_str}\n{RESET}"
+        return f"\n{PRINT_COLOR}{header_str}\n{node_str}\n{cycle_str}{RESET}\n"
 
 
     def get_node(self, index: int) -> Node:
