@@ -127,3 +127,27 @@ def test_str_multiple_elements():
     ll.append(3)
     result = str(ll)
     assert "Doubly Linked List | 3 Elements:\n[1 \u21D4 2 \u21D4 3]" in result
+
+
+def test_sort_merge():
+    ll = DoublyLinkedList()
+    values = [4, 2, 5, 1, 3]
+    for value in values:
+        ll.append(value)
+
+    assert ll.sort(method=1) is True
+    assert ll.get_values() == [1, 2, 3, 4, 5]
+    assert ll.head.value == 1
+    assert ll.tail.value == 5
+
+
+def test_sort_insertion():
+    ll = DoublyLinkedList()
+    values = [4, 2, 5, 1, 3]
+    for value in values:
+        ll.append(value)
+
+    assert ll.sort(method=2) is True
+    assert ll.get_values() == [1, 2, 3, 4, 5]
+    assert ll.head.value == 1
+    assert ll.tail.value == 5

@@ -438,6 +438,117 @@ class SinglyLinkedList:
         return True
 
 
+    def sort(self, method: int = 1) -> bool:
+        """
+        Sorts the linked list in place.
+        method=1: Merge sort
+        method=2: Insertion sort
+        """
+
+        try:
+            if self.has_cycle():
+                raise CycleDetectedException(sys._getframe().f_code.co_name)
+            if self.size <= 1:
+                return True
+
+            if method == 1:
+                def split(head: Node | None):
+                    if head is None or head.next is None:
+                        return head, None
+                    slow = head
+                    fast = head
+                    prev = None
+                    while fast and fast.next:
+                        prev = slow
+                        slow = slow.next
+                        fast = fast.next.next
+                    if prev:
+                        prev.next = None
+                    return head, slow
+
+                def merge(left: Node | None, right: Node | None):
+                    if left is None:
+                        tail = right
+                        while tail and tail.next:
+                            tail = tail.next
+                        return right, tail
+                    if right is None:
+                        tail = left
+                        while tail and tail.next:
+                            tail = tail.next
+                        return left, tail
+
+                    if left.value <= right.value:
+                        head = left
+                        left = left.next
+                    else:
+                        head = right
+                        right = right.next
+                    tail = head
+                    tail.next = None
+
+                    while left and right:
+                        if left.value <= right.value:
+                            tail.next = left
+                            tail = left
+                            left = left.next
+                        else:
+                            tail.next = right
+                            tail = right
+                            right = right.next
+                        tail.next = None
+
+                    remainder = left if left else right
+                    tail.next = remainder
+                    while tail.next:
+                        tail = tail.next
+                    return head, tail
+
+                def merge_sort(head: Node | None):
+                    if head is None or head.next is None:
+                        return head, head
+                    left, right = split(head)
+                    left_head, left_tail = merge_sort(left)
+                    right_head, right_tail = merge_sort(right)
+                    return merge(left_head, right_head)
+
+                head, tail = merge_sort(self.head)
+                self.head = head
+                self.tail = tail
+                return True
+
+            if method == 2:
+                sorted_head = None
+                current = self.head
+                while current:
+                    next_node = current.next
+                    if sorted_head is None or current.value <= sorted_head.value:
+                        current.next = sorted_head
+                        sorted_head = current
+                    else:
+                        search = sorted_head
+                        while search.next and search.next.value <= current.value:
+                            search = search.next
+                        current.next = search.next
+                        search.next = current
+                    current = next_node
+
+                self.head = sorted_head
+                self.tail = sorted_head
+                if self.tail:
+                    while self.tail.next:
+                        self.tail = self.tail.next
+                return True
+
+            raise ValueError("Method must be 1 (merge) or 2 (insertion).")
+        except CycleDetectedException as e:
+            print(e)
+        except ValueError as e:
+            print(e)
+
+        return False
+
+
     def clear(self, iterate: bool = False):
         """
         Clears the linked list, removing all nodes and resetting size to 0.
