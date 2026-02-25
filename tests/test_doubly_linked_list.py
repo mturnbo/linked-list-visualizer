@@ -117,7 +117,7 @@ def test_reverse():
 def test_str_empty_list():
     ll = DoublyLinkedList()
     result = str(ll)
-    assert result == "\nDoubly Linked List | 0 Elements:\n[]\n"
+    assert "Doubly Linked List | 0 Elements:\n[]" in result
 
 
 def test_str_multiple_elements():
@@ -126,4 +126,4 @@ def test_str_multiple_elements():
     ll.append(2)
     ll.append(3)
     result = str(ll)
-    assert result == "\nDoubly Linked List | 3 Elements:\n[1 \u21D4 2 \u21D4 3]\n"
+    assert "Doubly Linked List | 3 Elements:\n[1 \u21D4 2 \u21D4 3]" in result

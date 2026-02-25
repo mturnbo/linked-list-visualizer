@@ -90,8 +90,8 @@ class LinkedListShell(cmd.Cmd):
 
 
     def do_has_cycle(self, arg):
-        index = self.ll.get_cycle_index()
-        if index != -1:
+        index = self.ll.get_cycle_start_index(method=1)
+        if index:
             print(f"Linked list contains a cycle at node {index}")
         else:
             print("Linked list does not contain a cycle.")

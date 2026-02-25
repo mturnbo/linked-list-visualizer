@@ -1,7 +1,7 @@
 import sys
 from classes.node import Node
 from typing import Optional
-from constants import PRINT_ARROW_SINGLE as LINK_ARROW, PRINT_ARROW_UP, PRINT_ARROW_DOWN, PRINT_ARROW_LEFT
+from constants import PRINT_ARROW_SINGLE as LINK_ARROW, PRINT_ARROW_UP, PRINT_ARROW_DOWN, PRINT_ARROW_LEFT, PRINT_COLOR, RESET
 from classes.linked_list_exceptions import *
 from utils import filter_values
 
@@ -23,11 +23,11 @@ class SinglyLinkedList:
         """
 
         values = self.get_values()
-        header_str = f"\nSingly Linked List | {self.size} Elements:"
+        header_str = f"Singly Linked List | {self.size} Elements:"
         node_str = f"[{LINK_ARROW.join(map(str, values))}]"
         cycle_str = ""
-        cycle_index = self.get_cycle_index()
-        if cycle_index > -1:
+        cycle_index = self.get_cycle_start_index()
+        if cycle_index:
             # get length to cycle index
             value_lengths = [len(str(value)) for value in values]
             length_to_cycle_index = sum(value_lengths[:cycle_index]) + (cycle_index * len(LINK_ARROW)) + 1
@@ -43,7 +43,7 @@ class SinglyLinkedList:
             back_arrows = f"{PRINT_ARROW_LEFT} " * (length_to_tail // 2 + 1)
             cycle_str += f"\n{spaces}{back_arrows}"
 
-        return f"{header_str}\n{node_str}\n{cycle_str}\n"
+        return f"\n{PRINT_COLOR}{header_str}\n{node_str}\n{cycle_str}{RESET}\n"
 
 
     def get_node(self, index: int) -> Node:
@@ -294,39 +294,129 @@ class SinglyLinkedList:
         return False
 
 
-    def has_cycle(self) -> bool:
+    def has_cycle(self, method:int = 1) -> bool:
         """
         Detects if the linked list has a cycle.
-        Time complexity: O(n)
         """
+        match method:
+            case 1:
+                """
+                Floyd's Cycle-Finding Algorithm
+                Time complexity: O(n)
+                """
+                fast_runner = slow_runner = self.head
+                while fast_runner and fast_runner.next:
+                    fast_runner = fast_runner.next.next
+                    slow_runner = slow_runner.next
+                    if fast_runner is slow_runner:
+                        return True
+            case 2:
+                """
+                Brent's Cycle-Finding Algorithm
+                Time complexity: O(n)
+                """
+                if self.head is None or self.head.next is None:
+                    return False
 
-        fast_runner = slow_runner = self.head
-        while fast_runner and fast_runner.next:
-            fast_runner = fast_runner.next.next
-            slow_runner = slow_runner.next
-            if fast_runner is slow_runner:
-                return True
+                power = 1
+                lam = 1
+                slow_runner = self.head
+                fast_runner = self.head.next
+
+                while fast_runner:
+                    if slow_runner is fast_runner:
+                        return True
+                    if lam == power:
+                        slow_runner = fast_runner
+                        power *= 2
+                        lam = 0
+                    fast_runner = fast_runner.next
+                    lam += 1
+
         return False
 
 
-    def get_cycle_index(self) -> int:
+    def get_cycle_start_index(self, method:int = 1) -> Optional[int]:
         """
-        Finds the index of the first node in the cycle.
-        Time complexity: O(n)?
-        TODO: Add different methods and time complexity explanations for calculating cycle index.
+        Returns the index of the node where the cycle begins, or None if no cycle.
         """
+        match method:
+            case 1:
+                """
+                Floyd's Cycle-Finding Algorithm
+                Time complexity: O(n)
+                """
+                fast_runner = slow_runner = self.head
+                while fast_runner and fast_runner.next:
+                    fast_runner = fast_runner.next.next
+                    slow_runner = slow_runner.next
+                    if fast_runner is slow_runner:
+                        break
+                else:
+                    return None
 
-        if self.tail.next is not None:
-            if self.tail.next == self.head:
-                return 0
-            else:
-                current_node = self.head
-                for i in range(self.size - 1):
-                    if self.tail.next is current_node:
-                        return i
-                    current_node = current_node.next
+                slow_runner = self.head
+                index = 0
+                while slow_runner is not fast_runner:
+                    slow_runner = slow_runner.next
+                    fast_runner = fast_runner.next
+                    index += 1
 
-        return -1
+                return index
+
+            case 2:
+                """
+                Brent's Cycle-Finding Algorithm
+                Time complexity: O(n)
+                """
+                if self.head is None or self.head.next is None:
+                    return None
+
+                power = 1
+                lam = 1
+                tortoise = self.head
+                hare = self.head.next
+
+                while hare and tortoise is not hare:
+                    if lam == power:
+                        tortoise = hare
+                        power *= 2
+                        lam = 0
+                    hare = hare.next
+                    lam += 1
+
+                if hare is None:
+                    return None
+
+                tortoise = self.head
+                hare = self.head
+                for _ in range(lam):
+                    hare = hare.next
+
+                index = 0
+                while tortoise is not hare:
+                    tortoise = tortoise.next
+                    hare = hare.next
+                    index += 1
+
+                return index
+
+            case 3:
+                """
+                Use the pointer at the tail to find the start of the cycle.
+                Time complexity: O(1)
+                """
+                if self.tail.next is not None:
+                    if self.tail.next == self.head:
+                        return 0
+                    else:
+                        current_node = self.head
+                        for i in range(self.size - 1):
+                            if self.tail.next is current_node:
+                                return i
+                            current_node = current_node.next
+
+        return None
 
 
     def reverse(self):

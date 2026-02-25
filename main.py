@@ -66,30 +66,34 @@ def main():
     parser.add_argument("--height", type=int, help="Window height in pixels.")
     args = parser.parse_args()
 
-    values = operations = []
-    if args.values and not args.ops_file:
-        values = parse_values(args.values)
-        operations = [("append", [value], f"append {value}") for value in values]
-    elif args.ops_file:
-        operations = parse_operations(args.ops_file)
-    else:
-        values = DEFAULT_VALUES
-        operations = [("append", [value], f"append {value}") for value in values]
-
-    if args.display == "animate":
-        llv = LinkedListVisualizer(
-            lltype=args.lltype,
-            operations=operations
-        )
-        llv.configure(vars(args))
-        llv.display()
-    else:
-        if values:
-            ll = LinkedList.build_from_values(args.lltype, values)
+    try:
+        if not args.values and not args.ops_file:
+            raise ValueError("Must specify either values or operations file")
+        values = operations = []
+        if args.values and not args.ops_file:
+            values = parse_values(args.values)
+            operations = [("append", [value], f"append {value}") for value in values]
+        elif args.ops_file:
+            operations = parse_operations(args.ops_file)
         else:
-            ll = LinkedList.build_from_ops(args.lltype, operations)
-        ll.show()
+            values = DEFAULT_VALUES
+            operations = [("append", [value], f"append {value}") for value in values]
 
+        if args.display == "animate":
+            llv = LinkedListVisualizer(
+                lltype=args.lltype,
+                operations=operations
+            )
+            llv.configure(vars(args))
+            llv.display()
+        else:
+            if values:
+                ll = LinkedList.build_from_values(args.lltype, values)
+            else:
+                ll = LinkedList.build_from_ops(args.lltype, operations)
+            ll.show()
+    except ValueError as e:
+        print(e)
 
 if __name__ == "__main__":
     main()
