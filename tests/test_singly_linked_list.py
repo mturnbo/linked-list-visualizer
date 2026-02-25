@@ -1,10 +1,20 @@
+import pytest
 from classes.singly_linked_list import SinglyLinkedList
 
-def test_empty_list_initialization():
-    ll = SinglyLinkedList()
-    assert ll.size == 0
-    assert ll.head is None
-    assert ll.tail is None
+@pytest.fixture(autouse=True)
+def sll():
+    return SinglyLinkedList()
+
+@pytest.fixture(autouse=True)
+def sll_123():
+    dll = SinglyLinkedList()
+    dll.append_values([1,2,3])
+    return dll
+
+def test_empty_list_initialization(sll):
+    assert sll.size == 0
+    assert sll.head is None
+    assert sll.tail is None
 
 
 def test_nonempty_list_initialization():
@@ -17,123 +27,92 @@ def test_nonempty_list_initialization():
     assert ll.tail.next is None
 
 
-def test_list_append():
-    ll = SinglyLinkedList()
-    val = 1
-    ll.append(val)
-    assert ll.size == 1
-    assert ll.head.value == val
-    assert ll.tail.value == val
+def test_list_append(sll):
+    sll.append(1)
+    assert sll.size == 1
+    assert sll.head.value == 1
+    assert sll.tail.value == 1
+
+    sll.append(2)
+    assert sll.size == 2
+    assert sll.head.value == 1
+    assert sll.tail.value == 2
 
 
-def test_list_multiple_append():
-    ll = SinglyLinkedList()
+def test_list_multiple_append(sll):
     vals = [1, 2, 3]
     for val in vals:
-        ll.append(val)
-        assert ll.head.value == vals[0]
-        assert ll.tail.value == val
+        sll.append(val)
+        assert sll.head.value == vals[0]
+        assert sll.tail.value == val
 
-    assert ll.size == len(vals)
+    assert sll.size == len(vals)
 
 
-def test_prepend():
-    ll = SinglyLinkedList()
-    ll.append(2)
-    ll.append(3)
+def test_prepend(sll):
+    sll.append(2)
+    sll.append(3)
     val = 1
-    ll.prepend(val)
-    assert ll.size == 3
-    assert ll.head.value == val
-    assert ll.head.next.value == 2
+    sll.prepend(val)
+    assert sll.size == 3
+    assert sll.head.value == val
+    assert sll.head.next.value == 2
 
 
-def test_get_node():
-    ll = SinglyLinkedList()
-    ll.append(1)
-    ll.append(2)
-    ll.append(3)
-    assert ll.get_node(1).value == 2
-
-def test_insert():
-    ll = SinglyLinkedList()
-    ll.append(1)
-    ll.append(2)
-    ll.append(3)
-    ll.insert(1, 4)
-    assert ll.get_node(1).value == 4
+def test_get_node(sll_123):
+    assert sll_123.get_node(1).value == 2
 
 
-def test_replace():
-    ll = SinglyLinkedList()
-    ll.append(1)
-    ll.append(2)
-    ll.append(3)
-
-    ll.replace(1, 4)
-    assert ll.get_node(1).value == 4
-
-    ll.replace(2, 5)
-    assert ll.get_node(2).value == 5
+def test_insert(sll_123):
+    sll_123.insert(1, 4)
+    assert sll_123.get_node(1).value == 4
 
 
-def test_trim():
-    ll = SinglyLinkedList()
-    ll.append(1)
-    ll.append(2)
-    ll.append(3)
-    assert ll.size == 3
+def test_replace(sll_123):
+    sll_123.replace(1, 4)
+    assert sll_123.get_node(1).value == 4
 
-    ll.trim()
-    assert ll.size == 2
+    sll_123.replace(2, 5)
+    assert sll_123.get_node(2).value == 5
 
 
-def test_contains():
-    ll = SinglyLinkedList()
-    ll.append(1)
-    ll.append(2)
-    assert ll.contains(1) is True
-    assert ll.contains(2) is True
-    assert ll.contains(3) is False
+def test_trim(sll_123):
+    assert sll_123.size == 3
+
+    sll_123.trim()
+    assert sll_123.size == 2
 
 
-def test_remove():
-    ll = SinglyLinkedList()
-    ll.append(1)
-    ll.append(2)
-    ll.remove(1)
-    assert ll.size == 1
+def test_contains(sll_123):
+    assert sll_123.contains(1) is True
+    assert sll_123.contains(2) is True
+    assert sll_123.contains(4) is False
 
 
-def test_reverse():
-    ll = SinglyLinkedList()
-    ll.append(1)
-    ll.append(2)
-    ll.reverse()
-    assert ll.head.value == 2
-    assert ll.tail.value == 1
+def test_remove(sll_123):
+    sll_123.remove(1)
+    assert sll_123.size == 2
 
 
-def test_str_empty_list():
-    ll = SinglyLinkedList()
-    result = str(ll)
+def test_reverse(sll_123):
+    sll_123.reverse()
+    assert sll_123.head.value == 3
+    assert sll_123.tail.value == 1
+
+
+def test_str_empty_list(sll):
+    result = str(sll)
     assert "Singly Linked List | 0 Elements:\n[]" in result
 
 
-def test_str_multiple_elements():
-    ll = SinglyLinkedList()
-    ll.append(1)
-    ll.append(2)
-    ll.append(3)
-    result = str(ll)
+def test_str_multiple_elements(sll_123):
+    result = str(sll_123)
     assert "Singly Linked List | 3 Elements:\n[1 \u21D2 2 \u21D2 3]" in result
-
 
 
 def test_has_cycle_methods():
     ll = SinglyLinkedList()
-    for value in [1, 2, 3, 4, 5]:
-        ll.append(value)
+    ll.append_values([1, 2, 3, 4, 5])
     assert ll.has_cycle(method=1) is False
     assert ll.has_cycle(method=2) is False
 
@@ -144,8 +123,7 @@ def test_has_cycle_methods():
 
 def test_get_cycle_start_index_methods():
     ll = SinglyLinkedList()
-    for value in [1, 2, 3, 4, 5]:
-        ll.append(value)
+    ll.append_values([1, 2, 3, 4, 5])
     assert ll.get_cycle_start_index(method=1) is None
     assert ll.get_cycle_start_index(method=2) is None
     assert ll.get_cycle_start_index(method=3) is None
