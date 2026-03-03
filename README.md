@@ -1,4 +1,4 @@
-# Linked List Visualizater
+# Linked List Visualizer
 ### This project allows for the creation of linked lists with the following operations
 * append
 * prepend
