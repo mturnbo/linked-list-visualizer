@@ -97,6 +97,12 @@ class LinkedListShell(cmd.Cmd):
             print("Linked list does not contain a cycle.")
 
 
+    def do_sort(self, arg):
+        method = int(arg) if arg else 1
+        self.ll.sort(method)
+        print("Sorted the linked list.")
+
+
     def do_reverse(self, arg):
         self.ll.reverse()
         print("Reversed the linked list.")
