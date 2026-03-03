@@ -81,7 +81,7 @@ def main():
 
         if args.display == "animate":
             llv = LinkedListVisualizer(
-                lltype=args.lltype,
+                ll_type=args.lltype,
                 operations=operations
             )
             llv.configure(vars(args))

@@ -9,9 +9,9 @@ class LinkedList:
     def create(ll_type: str = "singly") -> SinglyLinkedList | DoublyLinkedList:
         """Returns a new, empty linked list of the specified type."""
 
-        if ll_type == "singly":
+        if ll_type.lower() in ["s", "singly"]:
             return SinglyLinkedList()
-        elif ll_type == "doubly":
+        elif ll_type.lower() in ["d", "doubly"]:
             return DoublyLinkedList()
         else:
             raise ValueError(f"Unknown linked list type '{ll_type}'.")

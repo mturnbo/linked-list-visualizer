@@ -1,9 +1,11 @@
 import cmd
 from classes.singly_linked_list import SinglyLinkedList
 from classes.doubly_linked_list import DoublyLinkedList
+from classes.visualizer import LinkedListVisualizer
 from classes.linked_list import LinkedList
 from typing import List, Tuple
 from utils import str_to_ll_type
+
 
 class LinkedListShell(cmd.Cmd):
     """
@@ -20,8 +22,8 @@ class LinkedListShell(cmd.Cmd):
 
 
     def do_start(self, arg):
-        ll_type = input("What type of linked list would you like to create? [singly, doubly]: ").lower()  # Using input() within the cmd loop
-        if ll_type not in ["singly", "doubly"]:
+        ll_type = input("What type of linked list would you like to create? [singly [s], doubly [d]]: ").lower()  # Using input() within the cmd loop
+        if ll_type not in ["s", "singly", "d", "doubly"]:
             print("Invalid linked list type. Please try again. Type 'create singly' or 'create doubly'.")
             return
         self.ll = LinkedList.create(ll_type)
@@ -112,6 +114,20 @@ class LinkedListShell(cmd.Cmd):
         self.ll.clear()
         self.operations = []
         print("Cleared the linked list.")
+
+
+    def do_animate(self, arg):
+        ll_type = "singly" if self.ll.__class__.__name__ == "SinglyLinkedList" else "doubly"
+        llv = LinkedListVisualizer(
+            ll_type=ll_type,
+            operations=self.operations
+        )
+        params = {
+            "width": 1200,
+            "height": 800,
+        }
+        llv.configure(params)
+        llv.display()
 
 
     def do_show(self, arg):
