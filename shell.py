@@ -124,9 +124,15 @@ class LinkedListShell(cmd.Cmd):
             ll_type=ll_type,
             operations=self.operations
         )
+        wh = [int(x) for x in arg.split(' ') if x]
+        width = 1200
+        height = 800
+        if len(wh):
+            print(f"Setting window size to {wh}")
+            width, height = wh
         params = {
-            "width": 1200,
-            "height": 800,
+            "width": width,
+            "height": height,
         }
         llv.configure(params)
         llv.display()
