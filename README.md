@@ -5,7 +5,10 @@
 * insert
 * remove
 * replace
+* contains
+* cycle
 * reverse
+* sort (merge and insertion methods)
 
 Linked List can be generated from a comma-separated list of values or from an operations file.  They can be
 printed to the command line or displayed graphically with animation.
@@ -99,6 +102,19 @@ insert 3 2
 replace 2 33
 replace 5 44
 ```
+## Interactive Shell
+```bash
+python shell.py
+```
+This starts a command shell that allows for building, modifying, 
+and displaying linked lists interactively.
+
+
+## Animation
+Linked lists can be visualized using the `pygame` engine.  The command
+line or shell command `animate` will open a window that displays the linked list
+animation.  The animation will show the linked list being built and modified
+according to the operations specified in the operations file.
 
 **Screenshot**
 ![Linked List Visualizer](docs/LinkedListVisualizer_Screenshot1.png)

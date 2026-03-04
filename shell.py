@@ -1,9 +1,11 @@
 import cmd
 from classes.singly_linked_list import SinglyLinkedList
 from classes.doubly_linked_list import DoublyLinkedList
+from classes.visualizer import LinkedListVisualizer
 from classes.linked_list import LinkedList
 from typing import List, Tuple
 from utils import str_to_ll_type
+
 
 class LinkedListShell(cmd.Cmd):
     """
@@ -20,8 +22,8 @@ class LinkedListShell(cmd.Cmd):
 
 
     def do_start(self, arg):
-        ll_type = input("What type of linked list would you like to create? [singly, doubly]: ").lower()  # Using input() within the cmd loop
-        if ll_type not in ["singly", "doubly"]:
+        ll_type = input("What type of linked list would you like to create? [singly [s], doubly [d]]: ").lower()  # Using input() within the cmd loop
+        if ll_type not in ["s", "singly", "d", "doubly"]:
             print("Invalid linked list type. Please try again. Type 'create singly' or 'create doubly'.")
             return
         self.ll = LinkedList.create(ll_type)
@@ -41,9 +43,9 @@ class LinkedListShell(cmd.Cmd):
     def do_append(self, arg):
         values = [x for x in arg.split(',') if x]
         self.ll.append_values(values)
-        status = f"Added {len(values)} node(s) to the end of the linked list."
+        status = f"Appended {len(values)} node(s) to the end of the linked list."
         for value in values:
-            self.append_operations("append", [value], f"Added  value {value} to the end of the linked list.")
+            self.append_operations("append", [value], f"Append {value}")
         print(status)
 
 
@@ -52,7 +54,7 @@ class LinkedListShell(cmd.Cmd):
         self.ll.prepend_values(values)
         status = f"Added {len(values)} node(s) to the beginning of the linked list."
         for value in values:
-            self.append_operations("prepend", [value], status)
+            self.append_operations("prepend", [value], f"Prepend {value}")
         print(status)
 
 
@@ -60,7 +62,7 @@ class LinkedListShell(cmd.Cmd):
         index, value = arg.split(" ")
         self.ll.insert(int(index), str_to_ll_type(value))
         status = f"Inserted node with value {value} at index {index}."
-        self.append_operations("insert", [int(index), value], status)
+        self.append_operations("insert", [int(index), value], f"Insert {value} at {index}")
         print(status)
 
 
@@ -68,7 +70,7 @@ class LinkedListShell(cmd.Cmd):
         index, value = arg.split(" ")
         self.ll.replace(int(index), value)
         status = f"Replaced node at index {index} with value {value}."
-        self.append_operations("replace", [int(index), value], status)
+        self.append_operations("replace", [int(index), value], f"Replace {value} at {index}")
         print(status)
 
 
@@ -77,7 +79,7 @@ class LinkedListShell(cmd.Cmd):
         index = int(arg)
         self.ll.create_cycle(index)
         status = f"Created cycle starting at index {index}."
-        self.append_operations("cycle", [int(index)], status)
+        self.append_operations("cycle", [int(index)], "Create cycle")
         print(status)
 
 
@@ -85,7 +87,7 @@ class LinkedListShell(cmd.Cmd):
         index = int(arg)
         self.ll.remove(index)
         status = f"Removed node at index {index}."
-        self.append_operations("remove", [int(index)], status)
+        self.append_operations("remove", [int(index)], f"Remove {index}")
         print(status)
 
 
@@ -93,8 +95,10 @@ class LinkedListShell(cmd.Cmd):
         index = self.ll.get_cycle_start_index(method=1)
         if index:
             print(f"Linked list contains a cycle at node {index}")
+            self.append_operations("has_cycle:", [int(index)], "Yes")
         else:
             print("Linked list does not contain a cycle.")
+            self.append_operations("has_cycle:", [int(index)], "No")
 
 
     def do_sort(self, arg):
@@ -112,6 +116,26 @@ class LinkedListShell(cmd.Cmd):
         self.ll.clear()
         self.operations = []
         print("Cleared the linked list.")
+
+
+    def do_animate(self, arg):
+        ll_type = "singly" if self.ll.__class__.__name__ == "SinglyLinkedList" else "doubly"
+        llv = LinkedListVisualizer(
+            ll_type=ll_type,
+            operations=self.operations
+        )
+        wh = [int(x) for x in arg.split(' ') if x]
+        width = 1200
+        height = 800
+        if len(wh):
+            print(f"Setting window size to {wh}")
+            width, height = wh
+        params = {
+            "width": width,
+            "height": height,
+        }
+        llv.configure(params)
+        llv.display()
 
 
     def do_show(self, arg):

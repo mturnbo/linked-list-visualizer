@@ -37,10 +37,10 @@ class OperationFrame:
 
 
 class LinkedListVisualizer:
-    def __init__(self, lltype:str, operations: List[Tuple[str, List[int | float | str | bool], str]], width: int = DEFAULT_WIDTH,
+    def __init__(self, ll_type:str, operations: List[Tuple[str, List[int | float | str | bool], str]], width: int = DEFAULT_WIDTH,
                  height: int = DEFAULT_HEIGHT, node_interval: float = DEFAULT_INTERVAL,
                  arrow_interval: float = DEFAULT_INTERVAL):
-        self.lltype = lltype
+        self.ll_type = ll_type
         self.operations = operations
         self.width = width
         self.height = height
@@ -158,7 +158,7 @@ class LinkedListVisualizer:
             operations: List[Tuple[str, List[int | float | str | bool], str]],
             interval: float,
     ) -> List[OperationFrame]:
-        linked_list = LinkedList.create(self.lltype)
+        linked_list = LinkedList.create(self.ll_type)
         nodes = []
         next_id = len(nodes)
         frames: List[OperationFrame] = []
@@ -279,7 +279,7 @@ class LinkedListVisualizer:
                     label=label,
                 ))
             elif command == "cycle":
-                if self.lltype == "singly":
+                if self.ll_type == "singly":
                     if size_before == 0:
                         continue
                     start_index = args[0]
@@ -429,7 +429,7 @@ class LinkedListVisualizer:
                 visuals_by_id[visual.node_id] = visual
 
             op_elapsed = progress * frame.duration
-            bidirectional = self.lltype == "doubly"
+            bidirectional = self.ll_type == "doubly"
             for index in range(len(visuals) - 1):
                 current = visuals[index]
                 next_visual = visuals[index + 1]
