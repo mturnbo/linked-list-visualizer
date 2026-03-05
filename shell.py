@@ -109,6 +109,7 @@ class LinkedListShell(cmd.Cmd):
 
     def do_reverse(self, arg):
         self.ll.reverse()
+        self.append_operations("reverse", [], "reverse")
         print("Reversed the linked list.")
 
 
