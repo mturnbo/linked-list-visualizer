@@ -106,6 +106,7 @@ class LinkedListShell(cmd.Cmd):
     def do_sort(self, arg):
         method = int(arg) if arg else 1
         self.ll.sort(method)
+        self.append_operations("sort", [], "sort")
         print("Sorted the linked list.")
 
 

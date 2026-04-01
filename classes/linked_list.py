@@ -48,6 +48,9 @@ class LinkedList:
                 case "has_cycle":
                     result = ll.has_cycle()
                     print(f"Has cycle: {result}")
+                case "sort":
+                    method = op[1][0] if op[1] else 1
+                    ll.sort(method=method)
                 case _:
                     raise ValueError(f"Unknown operation type '{op[0]}' in operations file.")
 
