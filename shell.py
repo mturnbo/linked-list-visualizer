@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import cmd
 from classes.singly_linked_list import SinglyLinkedList
 from classes.doubly_linked_list import DoublyLinkedList
@@ -109,6 +111,7 @@ class LinkedListShell(cmd.Cmd):
 
     def do_reverse(self, arg):
         self.ll.reverse()
+        self.append_operations("reverse", [], "reverse")
         print("Reversed the linked list.")
 
 

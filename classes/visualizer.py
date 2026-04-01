@@ -278,6 +278,20 @@ class LinkedListVisualizer:
                     cycle_link=current_cycle,
                     label=label,
                 ))
+            elif command == "reverse":
+                if size_before == 0:
+                    continue
+                linked_list.reverse()
+                nodes = list(reversed(nodes))
+                frames.append(OperationFrame(
+                    op_type="reverse",
+                    duration=interval,
+                    nodes_before=nodes_before,
+                    nodes_after=[NodeState(node.node_id, node.value) for node in nodes],
+                    current_new_id=current_new_id,
+                    cycle_link=current_cycle,
+                    label=label,
+                ))
             elif command == "cycle":
                 if self.ll_type == "singly":
                     if size_before == 0:
@@ -365,11 +379,51 @@ class LinkedListVisualizer:
             elif frame.op_type == "replace":
                 nodes_render = frame.nodes_after
                 blink_on = int((now / 0.2)) % 2 == 0
+            elif frame.op_type == "reverse":
+                nodes_render = frame.nodes_after
+                blink_on = False
             else:
                 nodes_render = frame.nodes_after
                 blink_on = False
 
-            visuals = self.layout_nodes(nodes_render, self.width, self.height)
+            if frame.op_type == "reverse":
+                visuals_before = self.layout_nodes(frame.nodes_before, self.width, self.height)
+                visuals_after = self.layout_nodes(frame.nodes_after, self.width, self.height)
+                before_by_id = {visual.node_id: visual for visual in visuals_before}
+                after_by_id = {visual.node_id: visual for visual in visuals_after}
+                arrow_out_end = 0.2
+                arrow_in_start = 0.8
+                if progress <= arrow_out_end:
+                    move_t = 0.0
+                elif progress >= arrow_in_start:
+                    move_t = 1.0
+                else:
+                    move_t = (progress - arrow_out_end) / (arrow_in_start - arrow_out_end)
+
+                visuals = []
+                for node in frame.nodes_after:
+                    before_visual = before_by_id.get(node.node_id)
+                    after_visual = after_by_id.get(node.node_id)
+                    if before_visual and after_visual:
+                        start_x, start_y = before_visual.position
+                        end_x, end_y = after_visual.position
+                        x = int(start_x + (end_x - start_x) * move_t)
+                        y = int(start_y + (end_y - start_y) * move_t)
+                        visuals.append(NodeVisual(
+                            node_id=node.node_id,
+                            value=node.value,
+                            position=(x, y),
+                            row=after_visual.row,
+                            col=after_visual.col,
+                        ))
+                    elif after_visual:
+                        visuals.append(after_visual)
+                reverse_arrow_out_end = arrow_out_end
+                reverse_arrow_in_start = arrow_in_start
+            else:
+                visuals = self.layout_nodes(nodes_render, self.width, self.height)
+                reverse_arrow_out_end = None
+                reverse_arrow_in_start = None
             screen.fill(DEFAULT_BG_COLOR)
 
             panel_rect = pygame.Rect(20, 20, PANEL_WIDTH - 40, self.height - 40)
@@ -453,6 +507,17 @@ class LinkedListVisualizer:
                     link_progress = 1.0
                     if frame.op_type == "add" and frame.added_id in {current.node_id, next_visual.node_id}:
                         link_progress = self.clamp(op_elapsed / max(self.arrow_interval, 0.01), 0.0, 1.0)
+                    elif frame.op_type == "reverse":
+                        if progress <= reverse_arrow_out_end:
+                            link_progress = 1.0 - (progress / max(reverse_arrow_out_end, 0.01))
+                        elif progress >= reverse_arrow_in_start:
+                            link_progress = self.clamp(
+                                (progress - reverse_arrow_in_start) / max(1 - reverse_arrow_in_start, 0.01),
+                                0.0,
+                                1.0,
+                            )
+                        else:
+                            link_progress = 0.0
                     self.draw_polyline_arrow(screen, path, ARROW_COLOR, progress=link_progress, width=3)
                     if bidirectional:
                         reverse_path = list(reversed(path))
@@ -469,6 +534,17 @@ class LinkedListVisualizer:
                     link_progress = 1.0
                     if frame.op_type == "add" and frame.added_id in {current.node_id, next_visual.node_id}:
                         link_progress = self.clamp(op_elapsed / max(self.arrow_interval, 0.01), 0.0, 1.0)
+                    elif frame.op_type == "reverse":
+                        if progress <= reverse_arrow_out_end:
+                            link_progress = 1.0 - (progress / max(reverse_arrow_out_end, 0.01))
+                        elif progress >= reverse_arrow_in_start:
+                            link_progress = self.clamp(
+                                (progress - reverse_arrow_in_start) / max(1 - reverse_arrow_in_start, 0.01),
+                                0.0,
+                                1.0,
+                            )
+                        else:
+                            link_progress = 0.0
                     self.draw_arrow(screen, start, end, ARROW_COLOR, progress=link_progress, width=3)
                     if bidirectional:
                         self.draw_arrow(screen, end, start, ARROW_COLOR, progress=link_progress, width=3)
@@ -504,6 +580,17 @@ class LinkedListVisualizer:
                     cycle_progress = 1.0
                     if frame.op_type == "cycle":
                         cycle_progress = self.clamp(op_elapsed / max(self.arrow_interval, 0.01), 0.0, 1.0)
+                    elif frame.op_type == "reverse":
+                        if progress <= reverse_arrow_out_end:
+                            cycle_progress = 1.0 - (progress / max(reverse_arrow_out_end, 0.01))
+                        elif progress >= reverse_arrow_in_start:
+                            cycle_progress = self.clamp(
+                                (progress - reverse_arrow_in_start) / max(1 - reverse_arrow_in_start, 0.01),
+                                0.0,
+                                1.0,
+                            )
+                        else:
+                            cycle_progress = 0.0
                     self.draw_polyline_arrow(screen, path, CYCLE_COLOR, progress=cycle_progress, width=3)
 
             pygame.display.flip()
