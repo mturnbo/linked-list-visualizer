@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import cmd
 from classes.singly_linked_list import SinglyLinkedList
 from classes.doubly_linked_list import DoublyLinkedList
