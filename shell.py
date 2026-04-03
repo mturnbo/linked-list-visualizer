@@ -6,7 +6,6 @@ from classes.doubly_linked_list import DoublyLinkedList
 from classes.visualizer import LinkedListVisualizer
 from classes.linked_list import LinkedList
 from typing import List, Tuple
-from utils import str_to_ll_type
 
 
 class LinkedListShell(cmd.Cmd):
@@ -62,7 +61,7 @@ class LinkedListShell(cmd.Cmd):
 
     def do_insert(self, arg):
         index, value = arg.split(" ")
-        self.ll.insert(int(index), str_to_ll_type(value))
+        self.ll.insert(int(index), value)
         status = f"Inserted node with value {value} at index {index}."
         self.append_operations("insert", [int(index), value], f"Insert {value} at {index}")
         print(status)
@@ -106,6 +105,7 @@ class LinkedListShell(cmd.Cmd):
     def do_sort(self, arg):
         method = int(arg) if arg else 1
         self.ll.sort(method)
+        self.append_operations("sort", [], "sort")
         print("Sorted the linked list.")
 
 

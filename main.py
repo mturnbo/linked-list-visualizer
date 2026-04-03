@@ -48,6 +48,11 @@ def parse_operations(path: str) -> List[Tuple[str, List[int | float | str | bool
                 operations.append(("cycle", [int(args[0])], stripped))
             elif command == "has_cycle":
                 operations.append(("has_cycle", [], stripped))
+            elif command == "sort":
+                if len(args) > 1:
+                    raise ValueError(f"Line {line_number}: sort accepts optional method only.")
+                method = int(args[0]) if args else 1
+                operations.append(("sort", [method], stripped))
             else:
                 raise ValueError(f"Line {line_number}: unknown command '{command}'.")
 

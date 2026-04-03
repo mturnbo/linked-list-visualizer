@@ -3,7 +3,7 @@ from classes.node import Node
 from typing import Optional
 from constants import PRINT_ARROW_SINGLE as LINK_ARROW, PRINT_ARROW_UP, PRINT_ARROW_DOWN, PRINT_ARROW_LEFT, PRINT_COLOR, RESET
 from classes.linked_list_exceptions import *
-from utils import filter_values
+from utils import filter_values, to_ll_type
 
 class SinglyLinkedList:
     def __init__(self, initial_node_value: Any = None):
@@ -90,12 +90,14 @@ class SinglyLinkedList:
         try:
             if not value:
                 raise EmptyValueException(value)
-            if type(value) not in [int, float, str, bool]:
-                raise ValueTypeException(value)
+            
+            ll_value = to_ll_type(value)
+            if type(ll_value) not in [int, float, str, bool]:
+                raise ValueTypeException(ll_value)
             if self.has_cycle():
                 raise CycleDetectedException(sys._getframe().f_code.co_name)
 
-            new_node = Node(value)
+            new_node = Node(ll_value)
             if self.head:
                 self.tail.next = new_node
             else:

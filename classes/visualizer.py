@@ -47,6 +47,10 @@ class LinkedListVisualizer:
         self.node_interval = node_interval
         self.arrow_interval = arrow_interval
 
+    @staticmethod
+    def _sort_key(value):
+        return (str(type(value)), str(value))
+
     def configure(self, params: Dict[str, Any]):
         if params.get("node_interval"):
             self.node_interval = params["node_interval"]
@@ -292,6 +296,22 @@ class LinkedListVisualizer:
                     cycle_link=current_cycle,
                     label=label,
                 ))
+            elif command == "sort":
+                if size_before == 0:
+                    continue
+                sort_method = args[0] if args else 1
+                if linked_list.sort(method=sort_method):
+                    nodes = sorted(nodes, key=lambda node: self._sort_key(node.value))
+                    current_cycle = None
+                    frames.append(OperationFrame(
+                        op_type="sort",
+                        duration=interval,
+                        nodes_before=nodes_before,
+                        nodes_after=[NodeState(node.node_id, node.value) for node in nodes],
+                        current_new_id=current_new_id,
+                        cycle_link=current_cycle,
+                        label=label,
+                    ))
             elif command == "cycle":
                 if self.ll_type == "singly":
                     if size_before == 0:
@@ -367,8 +387,8 @@ class LinkedListVisualizer:
                     running = False
 
             frame, progress, frame_index = self.get_frame_at_time(frames, now)
-            remove_phase = 0.7
-            replace_phase = 0.5
+            remove_phase = 0.8
+            replace_phase = 0.6
 
             if frame.op_type == "remove" and progress < remove_phase:
                 nodes_render = frame.nodes_before
@@ -379,6 +399,19 @@ class LinkedListVisualizer:
             elif frame.op_type == "replace":
                 nodes_render = frame.nodes_after
                 blink_on = int((now / 0.2)) % 2 == 0
+            elif frame.op_type == "sort":
+                sort_remove_phase = 0.7
+                if progress < sort_remove_phase:
+                    remove_progress = progress / max(sort_remove_phase, 0.01)
+                    total_nodes = len(frame.nodes_before)
+                    removed_count = min(total_nodes, int(remove_progress * total_nodes))
+                    nodes_render = frame.nodes_before[:total_nodes - removed_count]
+                else:
+                    redraw_progress = (progress - sort_remove_phase) / max(1 - sort_remove_phase, 0.01)
+                    total_nodes = len(frame.nodes_after)
+                    visible_count = min(total_nodes, int(redraw_progress * total_nodes))
+                    nodes_render = frame.nodes_after[:visible_count]
+                blink_on = False
             elif frame.op_type == "reverse":
                 nodes_render = frame.nodes_after
                 blink_on = False

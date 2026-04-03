@@ -3,6 +3,7 @@ from classes.node import Node
 from classes.singly_linked_list import SinglyLinkedList
 from constants import PRINT_ARROW_DOUBLE as LINK_ARROW, PRINT_COLOR, RESET
 from classes.linked_list_exceptions import *
+from utils import to_ll_type
 
 class DoublyLinkedList(SinglyLinkedList):
     def __init__(self, initial_node_value: int | float | str | bool = None):
@@ -52,12 +53,14 @@ class DoublyLinkedList(SinglyLinkedList):
         try:
             if not value:
                 raise EmptyValueException(value)
-            if type(value) not in [int, float, str, bool]:
-                raise ValueTypeException(value)
+            
+            ll_value = to_ll_type(value)
+            if type(ll_value) not in [int, float, str, bool]:
+                raise ValueTypeException(ll_value)
             if self.has_cycle():
                 raise CycleDetectedException(sys._getframe().f_code.co_name)
 
-            new_node = Node(value)
+            new_node = Node(ll_value)
             if self.head:
                 self.tail.next = new_node
                 new_node.prev = self.tail
