@@ -62,6 +62,10 @@ class SinglyLinkedList:
         return current_node
 
 
+    def get_node_address(self, index: int) -> int:
+        return id(self.get_node(index))
+
+
     def get_values(self, count: Optional[int] = None) -> list[int | float | str | bool]:
         """
         Returns list of node values to count size, or head/tail if out of bounds
@@ -557,7 +561,7 @@ class SinglyLinkedList:
         In Python, you can remove all nodes from a linked list by simply setting the head of the list to None.
         This makes the entire list unreachable, and Python's garbage collector automatically reclaims the memory.
         An iterative option is included. This method is useful for understanding how deletion works in languages
-        that require manual memory management,
+        that require manual memory management.
         """
         if iterate:
             # Time complexity: O(n)
