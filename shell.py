@@ -75,6 +75,24 @@ class LinkedListShell(cmd.Cmd):
         print(status)
 
 
+    def do_get_node(self, arg):
+        """Get the value of a node at a given index. Usage: get_node [index]"""
+        index = int(arg)
+        value = self.ll.get_node(index)
+        status = f"Value of node at index {index} is {value}."
+        self.append_operations("get_node", [int(index)], f"Get node at {index}")
+        print(status)
+
+
+    def do_get_node_address(self, arg):
+        """Get the address of a node at a given index. Usage: get_node_address [index]"""
+        index = int(arg)
+        address = self.ll.get_node_address(index)
+        status = f"Address of node at index {index} is {address}."
+        self.append_operations("get_node_address", [int(index)], f"Get address of node at {index}")
+        print(status)
+
+
     def do_cycle(self, arg):
         """Create a cycle in the linked list. Usage: cycle [index]"""
         index = int(arg)
