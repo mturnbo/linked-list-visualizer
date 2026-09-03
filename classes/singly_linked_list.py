@@ -85,6 +85,25 @@ class SinglyLinkedList:
         return values
 
 
+    def get_addresses(self, count: Optional[int] = None) -> list[int | float | str | bool]:
+        """
+        Returns list of node addresses
+        Time complexity: O(n)
+        """
+
+        if count is None: count = self.size
+        if count <= 0: return []
+        index = min(count, self.size)
+        addresses = []
+
+        current_node = self.head
+        for _ in range(index):
+            addresses.append(id(current_node))
+            current_node = current_node.next
+
+        return addresses
+
+
     def append(self, value: int | float | str | bool):
         """
         Adds a new node to the end of the linked list.
