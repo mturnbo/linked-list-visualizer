@@ -1,0 +1,15 @@
+[project]
+name = "linkedlistvisualizer"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "mt-linked-list @ file:///Users/marcus/projects/mt/LinkedListModule",
+    "pygame",
+]
+
+[dependency-groups]
+dev = [
+    "mypy",
+    "pytest",
+    "ruff",
+]
