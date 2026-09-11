@@ -1,579 +1,115 @@
-import sys
-from classes.node import Node
-from typing import Optional
-from constants import PRINT_ARROW_SINGLE as LINK_ARROW, PRINT_ARROW_UP, PRINT_ARROW_DOWN, PRINT_ARROW_LEFT, PRINT_COLOR, RESET
-from classes.linked_list_exceptions import *
-from utils import filter_values, to_ll_type
+"""Visualizer adapter for the package-backed singly linked list."""
 
-class SinglyLinkedList:
-    def __init__(self, initial_node_value: Any = None):
-        self.head: Node | None = Node(initial_node_value) if initial_node_value else None
-        self.tail: Node | None = self.head
-        self.size: int = 0 if initial_node_value is None else 1
+from typing import Any
 
-        
-    def __len__(self):
-        return self.size
+from constants import PRINT_ARROW_DOWN
+from constants import PRINT_ARROW_LEFT
+from constants import PRINT_ARROW_SINGLE as LINK_ARROW
+from constants import PRINT_ARROW_UP
+from constants import PRINT_COLOR
+from constants import RESET
+from linked_list.base import _MISSING
+from linked_list import SinglyLinkedList as PackageSinglyLinkedList
 
 
-    def __str__(self):
+class SinglyLinkedList(PackageSinglyLinkedList):
+    """Singly linked list with visualizer-specific display helpers."""
+
+    def __init__(self, initial_node_value: Any = _MISSING) -> None:
+        """Initialize a singly linked list.
+
+        Args:
+            initial_node_value: Optional initial node value.
         """
-        Iterates through the linked list and appends node values to a list.
-        Uses list size instead of current_node to avoid infinite loop when list has a cycle.
-        """
+        super().__init__(initial_node_value, sort_key=self._visualizer_sort_key)
 
+    @staticmethod
+    def _visualizer_sort_key(value: Any) -> tuple[str, str]:
+        """Return a stable sort key for mixed visualizer input values.
+
+        Args:
+            value: Node value.
+
+        Returns:
+            A tuple suitable for comparing heterogeneous values.
+        """
+        return (str(type(value)), str(value))
+
+    def __str__(self) -> str:
+        """Return the linked list using the visualizer's terminal format.
+
+        Returns:
+            A colored linked list representation.
+        """
         values = self.get_values()
-        header_str = f"Singly Linked List | {self.size} Elements:"
-        node_str = f"[{LINK_ARROW.join(map(str, values))}]"
-        cycle_str = ""
+        header = f"Singly Linked List | {self.size} Elements:"
+        nodes = f"[{LINK_ARROW.join(map(str, values))}]"
+        cycle = self._cycle_marker(values, nodes)
+
+        return f"\n{PRINT_COLOR}{header}\n{nodes}\n{cycle}{RESET}\n"
+
+    def _cycle_marker(self, values: list[Any], nodes: str) -> str:
+        """Build the terminal cycle marker for cyclic singly lists.
+
+        Args:
+            values: List values rendered in node order.
+            nodes: Rendered node text.
+
+        Returns:
+            The rendered marker, or an empty string when the list is acyclic.
+        """
         cycle_index = self.get_cycle_start_index()
-        if cycle_index:
-            # get length to cycle index
-            value_lengths = [len(str(value)) for value in values]
-            length_to_cycle_index = sum(value_lengths[:cycle_index]) + (cycle_index * len(LINK_ARROW)) + 1
-            spaces = " " * length_to_cycle_index
-            cycle_str += f"{spaces}{PRINT_ARROW_UP}"
+        if cycle_index is None:
+            return ""
 
-            # get length to tail
-            length_to_tail = len(node_str) - len(spaces) - 3
-            spaces = " " * length_to_tail
-            cycle_str += f"{spaces}{PRINT_ARROW_DOWN}"
+        value_lengths = [len(str(value)) for value in values]
+        length_to_cycle_index = (
+            sum(value_lengths[:cycle_index])
+            + (cycle_index * len(LINK_ARROW))
+            + 1
+        )
+        cycle = f"{' ' * length_to_cycle_index}{PRINT_ARROW_UP}"
 
-            spaces = " " * (length_to_cycle_index + 1)
-            back_arrows = f"{PRINT_ARROW_LEFT} " * (length_to_tail // 2 + 1)
-            cycle_str += f"\n{spaces}{back_arrows}"
+        length_to_tail = len(nodes) - length_to_cycle_index - 3
+        cycle += f"{' ' * length_to_tail}{PRINT_ARROW_DOWN}"
 
-        return f"\n{PRINT_COLOR}{header_str}\n{node_str}\n{cycle_str}{RESET}\n"
+        back_arrows = f"{PRINT_ARROW_LEFT} " * (length_to_tail // 2 + 1)
+        cycle += f"\n{' ' * (length_to_cycle_index + 1)}{back_arrows}"
 
+        return cycle
 
-    def get_node(self, index: int) -> Node:
-        """
-        Returns node at index, or head/tail if out of bounds
-        Time complexity: O(n)
-        """
+    def has_cycle(self, method: int = 1) -> bool:
+        """Return whether the linked list contains a cycle.
 
-        if index <= 0: return self.head
-        if index >= self.size - 1: return self.tail
+        Args:
+            method: Compatibility selector for historical cycle algorithms.
 
-        current_node = self.head
-        for _ in range(index):
-            current_node = current_node.next
+        Returns:
+            True when the list contains a cycle.
 
-        return current_node
-
-
-    def get_values(self, count: Optional[int] = None) -> list[int | float | str | bool]:
-        """
-        Returns list of node values to count size, or head/tail if out of bounds
-        Time complexity: O(n)
-        """
-
-        if count is None: count = self.size
-        if count <= 0: return []
-        index = min(count, self.size)
-        values = []
-
-        current_node = self.head
-        for _ in range(index):
-            values.append(current_node.value)
-            current_node = current_node.next
-
-        return values
-
-
-    def append(self, value: int | float | str | bool):
-        """
-        Adds a new node to the end of the linked list.
-        Time complexity: O(1)
-        """
-
-        try:
-            if not value:
-                raise EmptyValueException(value)
-            
-            ll_value = to_ll_type(value)
-            if type(ll_value) not in [int, float, str, bool]:
-                raise ValueTypeException(ll_value)
-            if self.has_cycle():
-                raise CycleDetectedException(sys._getframe().f_code.co_name)
-
-            new_node = Node(ll_value)
-            if self.head:
-                self.tail.next = new_node
-            else:
-                self.head = new_node
-            self.tail = new_node
-            self.size += 1
-            return True
-        except EmptyValueException as e:
-            print(e)
-        except ValueTypeException as e:
-            print(e)
-        except CycleDetectedException as e:
-            print(e)
-
-        return False
-
-
-    def append_values(self, values: list[int | float | str | bool]):
-        """
-        Adds multiple new nodes to the end of the linked list.
-        Time complexity: O(n)
-        """
-        filtered_values = filter_values(values)
-        for value in filtered_values:
-            self.append(value)
-
-        return len(filtered_values)
-
-
-    def prepend(self, value: int | float | str | bool):
-        """
-        Adds a new node to the front of the linked list.
-        Time complexity: O(1)
-        """
-        try:
-            if not value:
-                raise EmptyValueException(value)
-            if type(value) not in [int, float, str, bool]:
-                raise ValueTypeException(value)
-
-            new_node = Node(value)
-            new_node.next = self.head
-            self.head = new_node
-            self.size += 1
-            return True
-        except EmptyValueException as e:
-            print(e)
-        except ValueTypeException as e:
-            print(e)
-
-        return False
-
-
-    def prepend_values(self, values: list[int | float | str | bool]):
-        """
-        Adding multiple nodes to the front of the linked list.
-        Preserves order
-        Time complexity: O(n)
-        """
-
-        filtered_values = filter_values(values)
-        for value in filtered_values[::-1]:
-            self.prepend(value)
-
-        return len(filtered_values)
-
-
-    def insert(self, index: int, value: int | float | str | bool):
-        """
-        Inserts a new node at the specified index.
-        Time complexity: O(n)
-        """
-
-        try:
-            if type(value) not in [int, float, str, bool]:
-                raise ValueTypeException(value)
-            if self.has_cycle():
-                raise CycleDetectedException(sys._getframe().f_code.co_name)
-
-            if index == 0:
-                self.prepend(value)
-            elif index >= self.size:
-                self.append(value)
-            else:
-                new_node = Node(value)
-                current_node = self.get_node(index -1)
-                new_node.next = current_node.next
-                current_node.next = new_node
-                self.size += 1
-                return True
-        except ValueTypeException as e:
-            print(e)
-        except CycleDetectedException as e:
-            print(e)
-
-        return False
-
-
-    def replace(self, index: int, value: int | float | str | bool):
-        """
-        Replaces the value of a node at the specified index.
-        Time complexity: O(n)
-        """
-
-        try:
-            if type(value) not in [int, float, str, bool]:
-                raise ValueTypeException(value)
-
-            current_node = self.get_node(index)
-            current_node.value = value
-            return True
-        except ValueTypeException as e:
-            print(e)
-
-        return False
-
-
-    def trim(self):
-        """
-        Removes the last node from the list.
-        Time complexity: O(n)
-        """
-
-        try:
-            if self.has_cycle():
-                raise CycleDetectedException(sys._getframe().f_code.co_name)
-
-            self.tail = None
-            current_node = self.get_node(self.size - 2)
-            current_node.next = None
-            self.tail = current_node
-            self.size -= 1
-            return True
-        except CycleDetectedException as e:
-            print(e)
-
-        return False
-
-
-    def contains(self, value: int | float | str | bool) -> bool:
-        """
-        Checks if the list contains a node with the specified value.
-        Time complexity: O(n)
-        """
-
-        current_node = self.head
-        while current_node:
-            if current_node.value == value: return True
-            current_node = current_node.next
-
-        return False
-
-
-    def remove(self, index: int):
-        """
-        Removes a node at the specified index.
-        Time complexity: O(n)
-        """
-
-        if index < 0 or index >= self.size: return False
-        if index == 0:
-            self.head = self.head.next
-            self.size -= 1
-        elif index >= self.size - 1:
-            self.trim()
-        else:
-            current_node = self.get_node(index - 1)
-            current_node.next = current_node.next.next
-            self.size -= 1
-
-        return True
-
-
-    def create_cycle(self, start: int):
-        """
-        Create a cycle in the linked list.
-        Accepts start index.  Start index must be less than tail index.
-        Example:
-        1 → 2 → 3 → 4 → 5
-                ↑       ↓
-                ← ← ← ← ←
-        Time complexity: O(1)
-        """
-
-        try:
-            if self.has_cycle():
-                raise CycleDetectedException(sys._getframe().f_code.co_name)
-            if start > self.size:
-                raise ValueError("Start index must come before tail index.")
-            start_node = self.get_node(start)
-            self.tail.next = start_node
-            return True
-        except ValueError as e:
-            print(e)
-
-        return False
-
-
-    def has_cycle(self, method:int = 1) -> bool:
-        """
-        Detects if the linked list has a cycle.
+        Raises:
+            ValueError: If an unknown method is requested.
         """
         match method:
-            case 1:
-                """
-                Floyd's Cycle-Finding Algorithm
-                Time complexity: O(n)
-                """
-                fast_runner = slow_runner = self.head
-                while fast_runner and fast_runner.next:
-                    fast_runner = fast_runner.next.next
-                    slow_runner = slow_runner.next
-                    if fast_runner is slow_runner:
-                        return True
-            case 2:
-                """
-                Brent's Cycle-Finding Algorithm
-                Time complexity: O(n)
-                """
-                if self.head is None or self.head.next is None:
-                    return False
-
-                power = 1
-                lam = 1
-                slow_runner = self.head
-                fast_runner = self.head.next
-
-                while fast_runner:
-                    if slow_runner is fast_runner:
-                        return True
-                    if lam == power:
-                        slow_runner = fast_runner
-                        power *= 2
-                        lam = 0
-                    fast_runner = fast_runner.next
-                    lam += 1
-
-        return False
-
-
-    def get_cycle_start_index(self, method:int = 1) -> Optional[int]:
-        """
-        Returns the index of the node where the cycle begins, or None if no cycle.
-        """
-        match method:
-            case 1:
-                """
-                Floyd's Cycle-Finding Algorithm
-                Time complexity: O(n)
-                """
-                fast_runner = slow_runner = self.head
-                while fast_runner and fast_runner.next:
-                    fast_runner = fast_runner.next.next
-                    slow_runner = slow_runner.next
-                    if fast_runner is slow_runner:
-                        break
-                else:
-                    return None
-
-                slow_runner = self.head
-                index = 0
-                while slow_runner is not fast_runner:
-                    slow_runner = slow_runner.next
-                    fast_runner = fast_runner.next
-                    index += 1
-
-                return index
-
-            case 2:
-                """
-                Brent's Cycle-Finding Algorithm
-                Time complexity: O(n)
-                """
-                if self.head is None or self.head.next is None:
-                    return None
-
-                power = 1
-                lam = 1
-                tortoise = self.head
-                hare = self.head.next
-
-                while hare and tortoise is not hare:
-                    if lam == power:
-                        tortoise = hare
-                        power *= 2
-                        lam = 0
-                    hare = hare.next
-                    lam += 1
-
-                if hare is None:
-                    return None
-
-                tortoise = self.head
-                hare = self.head
-                for _ in range(lam):
-                    hare = hare.next
-
-                index = 0
-                while tortoise is not hare:
-                    tortoise = tortoise.next
-                    hare = hare.next
-                    index += 1
-
-                return index
-
+            case 1 | 2:
+                return self._has_cycle()
             case 3:
-                """
-                Use the pointer at the tail to find the start of the cycle.
-                Time complexity: O(1)
-                """
-                if self.tail.next is not None:
-                    if self.tail.next == self.head:
-                        return 0
-                    else:
-                        current_node = self.head
-                        for i in range(self.size - 1):
-                            if self.tail.next is current_node:
-                                return i
-                            current_node = current_node.next
+                return self.tail is not None and self.tail.next is not None
+            case _:
+                raise ValueError("Method must be 1, 2, or 3.")
 
-        return None
+    def trim(self) -> bool:
+        """Remove the tail node.
 
+        Returns:
+            True when a node was removed.
 
-    def reverse(self):
+        Raises:
+            IndexError: If the list is empty.
         """
-        Reverses the linked list in place.
-        Time complexity: O(n)
-        """
-        if self.size <= 1: return False
-
-        current_node = self.head
-        prev_node = None
-        while current_node:
-            next_node = current_node.next
-            current_node.next = prev_node
-            prev_node = current_node
-            current_node = next_node
-        self.head, self.tail = self.tail, self.head
-
+        self.pop_tail()
         return True
 
-
-    def sort(self, method: int = 1) -> bool:
-        """
-        Sorts the linked list in place.
-        method=1: Merge sort
-        method=2: Insertion sort
-        """
-
-        try:
-            if self.has_cycle():
-                raise CycleDetectedException(sys._getframe().f_code.co_name)
-            if self.size <= 1:
-                return True
-
-            if method == 1:
-                def split(head: Node | None):
-                    if head is None or head.next is None:
-                        return head, None
-                    slow = head
-                    fast = head
-                    prev = None
-                    while fast and fast.next:
-                        prev = slow
-                        slow = slow.next
-                        fast = fast.next.next
-                    if prev:
-                        prev.next = None
-                    return head, slow
-
-                def merge(left: Node | None, right: Node | None):
-                    if left is None:
-                        tail = right
-                        while tail and tail.next:
-                            tail = tail.next
-                        return right, tail
-                    if right is None:
-                        tail = left
-                        while tail and tail.next:
-                            tail = tail.next
-                        return left, tail
-
-                    if left.value <= right.value:
-                        head = left
-                        left = left.next
-                    else:
-                        head = right
-                        right = right.next
-                    tail = head
-                    tail.next = None
-
-                    while left and right:
-                        if left.value <= right.value:
-                            tail.next = left
-                            tail = left
-                            left = left.next
-                        else:
-                            tail.next = right
-                            tail = right
-                            right = right.next
-                        tail.next = None
-
-                    remainder = left if left else right
-                    tail.next = remainder
-                    while tail.next:
-                        tail = tail.next
-                    return head, tail
-
-                def merge_sort(head: Node | None):
-                    if head is None or head.next is None:
-                        return head, head
-                    left, right = split(head)
-                    left_head, left_tail = merge_sort(left)
-                    right_head, right_tail = merge_sort(right)
-                    return merge(left_head, right_head)
-
-                head, tail = merge_sort(self.head)
-                self.head = head
-                self.tail = tail
-                return True
-
-            if method == 2:
-                sorted_head = None
-                current = self.head
-                while current:
-                    next_node = current.next
-                    if sorted_head is None or current.value <= sorted_head.value:
-                        current.next = sorted_head
-                        sorted_head = current
-                    else:
-                        search = sorted_head
-                        while search.next and search.next.value <= current.value:
-                            search = search.next
-                        current.next = search.next
-                        search.next = current
-                    current = next_node
-
-                self.head = sorted_head
-                self.tail = sorted_head
-                if self.tail:
-                    while self.tail.next:
-                        self.tail = self.tail.next
-                return True
-
-            raise ValueError("Method must be 1 (merge) or 2 (insertion).")
-        except CycleDetectedException as e:
-            print(e)
-        except ValueError as e:
-            print(e)
-
-        return False
-
-
-    def clear(self, iterate: bool = False):
-        """
-        Clears the linked list, removing all nodes and resetting size to 0.
-        In Python, you can remove all nodes from a linked list by simply setting the head of the list to None.
-        This makes the entire list unreachable, and Python's garbage collector automatically reclaims the memory.
-        An iterative option is included. This method is useful for understanding how deletion works in languages
-        that require manual memory management,
-        """
-        if iterate:
-            # Time complexity: O(n)
-            current = self.head
-            while current:
-                # Store the next node to avoid losing the reference
-                next_node = current.next
-                current = next_node
-            self.head = None
-        else:
-            # Time complexity: O(1)
-            self.head = self.tail = None
-            self.size = 0
-
-        return True
-
-
-    def show(self):
+    def show(self) -> None:
+        """Print the linked list representation."""
         print(self)
