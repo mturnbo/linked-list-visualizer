@@ -15,20 +15,18 @@ printed to the command line or displayed graphically with animation.
 
 ### Requirements
 - Python 3.12+
-- `pygame` installed in your environment
+- `uv`
 
 ### Installation
-Create/activate a virtual environment, then install dependencies:
+Install project dependencies:
 ```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install pygame
+uv sync
 ```
 
 ## Usage
 Run with a comma-separated list of values (defaults to `1,2,3,4,5,6,7,8,9,10`):
 ```bash
-> python main.py singly print --values 1,2,3,4,5
+> uv run python main.py singly print --values 1,2,3,4,5
 
 Singly Linked List | 5 Elements:
 [1 ⇒ 2 ⇒ 3 ⇒ 4 ⇒ 5]
@@ -36,7 +34,7 @@ Singly Linked List | 5 Elements:
 
 Run from an operations file (examples included: `ops1.txt`, `ops2.txt`):
 ```bash
-> python main.py doubly print --operations-file examples/ops3.txt
+> uv run python main.py doubly print --ops-file examples/ops3.txt
 
 Doubly Linked List | 13 Elements:
 [1 ⇔ 4 ⇔ 2 ⇔ 6 ⇔ 7 ⇔ 8 ⇔ 10 ⇔ 15 ⇔ 20 ⇔ 22 ⇔ 26 ⇔ 27 ⇔ 50]
@@ -104,7 +102,7 @@ replace 5 44
 ```
 ## Interactive Shell
 ```bash
-python shell.py
+uv run python shell.py
 ```
 This starts a command shell that allows for building, modifying, 
 and displaying linked lists interactively.
