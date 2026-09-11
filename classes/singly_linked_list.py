@@ -98,6 +98,33 @@ class SinglyLinkedList(PackageSinglyLinkedList):
             case _:
                 raise ValueError("Method must be 1, 2, or 3.")
 
+    def get_cycle_start_index(self, method: int = 1) -> int | None:
+        """Return the index where a cycle begins.
+
+        Args:
+            method: Compatibility selector for historical cycle algorithms.
+
+        Returns:
+            The cycle start index, or None when the list is acyclic.
+
+        Raises:
+            ValueError: If an unknown method is requested.
+        """
+        match method:
+            case 1 | 2:
+                return super().get_cycle_start_index()
+            case 3:
+                if self.tail is None or self.tail.next is None:
+                    return None
+                current_node = self.head
+                for index in range(self.size):
+                    if self.tail.next is current_node:
+                        return index
+                    current_node = current_node.next
+                return None
+            case _:
+                raise ValueError("Method must be 1, 2, or 3.")
+
     def trim(self) -> bool:
         """Remove the tail node.
 

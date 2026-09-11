@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
 import cmd
+from typing import Any
+
 from classes.singly_linked_list import SinglyLinkedList
 from classes.doubly_linked_list import DoublyLinkedList
-from classes.visualizer import LinkedListVisualizer
 from classes.linked_list import LinkedList
-from typing import List, Tuple
 
 
 class LinkedListShell(cmd.Cmd):
@@ -17,7 +17,7 @@ class LinkedListShell(cmd.Cmd):
         super().__init__(completekey, stdin, stdout)
         self.prompt = 'LLV> '
         self.ll: SinglyLinkedList | DoublyLinkedList | None = None
-        self.operations: List[Tuple[str, List[int | float | str | bool], str]] = []
+        self.operations: list[tuple[str, list[int | float | str | bool], str]] = []
         print('Welcome to Linked List Visualizer. Type help or ? to list commands.\n')
         self.do_start('')
 
@@ -122,6 +122,8 @@ class LinkedListShell(cmd.Cmd):
 
 
     def do_animate(self, arg):
+        from classes.visualizer import LinkedListVisualizer
+
         ll_type = "singly" if self.ll.__class__.__name__ == "SinglyLinkedList" else "doubly"
         llv = LinkedListVisualizer(
             ll_type=ll_type,
@@ -149,7 +151,12 @@ class LinkedListShell(cmd.Cmd):
             self.ll.show()
 
 
-    def append_operations(self, operation: str, values: list[int | float | str | bool], description: str):
+    def append_operations(
+        self,
+        operation: str,
+        values: list[Any],
+        description: str,
+    ) -> None:
         self.operations.append((operation, values, description))
 
 

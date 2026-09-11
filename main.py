@@ -1,11 +1,22 @@
 import argparse
-from classes.linked_list import LinkedList
-from typing import List, Tuple
-from classes.visualizer import LinkedListVisualizer
+from pathlib import Path
+
 from constants import DEFAULT_VALUES
+from classes.linked_list import LinkedList
 
 
-def parse_values(raw_values: str) -> List[int | float | str | bool]:
+def parse_values(raw_values: str) -> list[int | float | str | bool]:
+    """Parse raw comma-separated CLI values.
+
+    Args:
+        raw_values: Raw comma-separated values.
+
+    Returns:
+        String values trimmed for later visualizer coercion.
+
+    Raises:
+        ValueError: If values cannot be parsed.
+    """
     if not raw_values:
         return []
     try:
@@ -14,11 +25,22 @@ def parse_values(raw_values: str) -> List[int | float | str | bool]:
         raise ValueError("Values must be a comma-separated list of int | float | str | bool") from exc
 
 
-def parse_operations(path: str) -> List[Tuple[str, List[int | float | str | bool], str]]:
+def parse_operations(path: str) -> list[tuple[str, list[int | float | str | bool], str]]:
+    """Parse visualizer operations from a text file.
+
+    Args:
+        path: Path to an operations file.
+
+    Returns:
+        Operation tuples of command, arguments, and original text.
+
+    Raises:
+        ValueError: If an operation has invalid syntax.
+    """
     operations = []
     if not path:
         return operations
-    with open(path, "r", encoding="utf-8") as handle:
+    with Path(path).open(encoding="utf-8") as handle:
         for line_number, line in enumerate(handle, start=1):
             stripped = line.strip()
             if not stripped or stripped.startswith("#"):
@@ -59,7 +81,8 @@ def parse_operations(path: str) -> List[Tuple[str, List[int | float | str | bool
     return operations
 
 
-def main():
+def main() -> None:
+    """Run the linked list visualizer CLI."""
     parser = argparse.ArgumentParser(description="Visualize a linked list with pygame.")
     parser.add_argument("ll_type", choices=["singly", "doubly"], default = "singly", help="Linked List type.  Singly or Doubly.")
     parser.add_argument("display", choices=["print", "animate"], help="Print to command line or visualize with pygame.")
@@ -85,6 +108,8 @@ def main():
             operations = [("append", [value], f"append {value}") for value in values]
 
         if args.display == "animate":
+            from classes.visualizer import LinkedListVisualizer
+
             llv = LinkedListVisualizer(
                 ll_type=args.ll_type,
                 operations=operations
