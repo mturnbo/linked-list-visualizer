@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
 import cmd
+from typing import Any
+
 from classes.singly_linked_list import SinglyLinkedList
 from classes.doubly_linked_list import DoublyLinkedList
-from classes.visualizer import LinkedListVisualizer
 from classes.linked_list import LinkedList
-from typing import List, Tuple
 
 
 class LinkedListShell(cmd.Cmd):
@@ -17,7 +17,7 @@ class LinkedListShell(cmd.Cmd):
         super().__init__(completekey, stdin, stdout)
         self.prompt = 'LLV> '
         self.ll: SinglyLinkedList | DoublyLinkedList | None = None
-        self.operations: List[Tuple[str, List[int | float | str | bool], str]] = []
+        self.operations: list[tuple[str, list[int | float | str | bool], str]] = []
         print('Welcome to Linked List Visualizer. Type help or ? to list commands.\n')
         self.do_start('')
 
@@ -42,6 +42,7 @@ class LinkedListShell(cmd.Cmd):
 
 
     def do_append(self, arg):
+        """Add a node to the end of the linked list. Usage: append [value1[, value2, ...]]"""
         values = [x for x in arg.split(',') if x]
         self.ll.append_values(values)
         status = f"Appended {len(values)} node(s) to the end of the linked list."
@@ -51,6 +52,7 @@ class LinkedListShell(cmd.Cmd):
 
 
     def do_prepend(self, arg):
+        """Add a node to the beginning of the linked list. Usage: prepend [value1[, value2, ...]]"""
         values = [x for x in arg.split(',') if x]
         self.ll.prepend_values(values)
         status = f"Added {len(values)} node(s) to the beginning of the linked list."
@@ -60,6 +62,7 @@ class LinkedListShell(cmd.Cmd):
 
 
     def do_insert(self, arg):
+        """Insert a node at a specific index. Usage: insert [index] [value]"""
         index, value = arg.split(" ")
         self.ll.insert(int(index), value)
         status = f"Inserted node with value {value} at index {index}."
@@ -68,6 +71,7 @@ class LinkedListShell(cmd.Cmd):
 
 
     def do_replace(self, arg):
+        """Replace a node at a specific index. Usage: replace [index] [value]"""
         index, value = arg.split(" ")
         self.ll.replace(int(index), value)
         status = f"Replaced node at index {index} with value {value}."
@@ -85,6 +89,7 @@ class LinkedListShell(cmd.Cmd):
 
 
     def do_remove(self, arg):
+        """Remove a node from the linked list. Usage: remove [index]"""
         index = int(arg)
         self.ll.remove(index)
         status = f"Removed node at index {index}."
@@ -93,6 +98,7 @@ class LinkedListShell(cmd.Cmd):
 
 
     def do_has_cycle(self, arg):
+        """Check if the linked list contains a cycle. Usage: has_cycle"""
         index = self.ll.get_cycle_start_index(method=1)
         if index:
             print(f"Linked list contains a cycle at node {index}")
@@ -103,6 +109,7 @@ class LinkedListShell(cmd.Cmd):
 
 
     def do_sort(self, arg):
+        """Sort the linked list. Usage: sort [method]"""
         method = int(arg) if arg else 1
         self.ll.sort(method)
         self.append_operations("sort", [], "sort")
@@ -110,18 +117,23 @@ class LinkedListShell(cmd.Cmd):
 
 
     def do_reverse(self, arg):
+        """Reverse the linked list. Usage: reverse"""
         self.ll.reverse()
         self.append_operations("reverse", [], "reverse")
         print("Reversed the linked list.")
 
 
     def do_clear(self, arg):
+        """Clear the linked list. Usage: clear"""
         self.ll.clear()
         self.operations = []
         print("Cleared the linked list.")
 
 
     def do_animate(self, arg):
+        """Animate the linked list. Usage: animate [width] [height]"""
+        from classes.visualizer import LinkedListVisualizer
+
         ll_type = "singly" if self.ll.__class__.__name__ == "SinglyLinkedList" else "doubly"
         llv = LinkedListVisualizer(
             ll_type=ll_type,
@@ -142,6 +154,7 @@ class LinkedListShell(cmd.Cmd):
 
 
     def do_show(self, arg):
+        """Show the linked list. Usage: show [operations]"""
         if arg == "operations":
             for operation, values, description in self.operations:
                 print(f"{operation} {values} - {description}")
@@ -149,7 +162,12 @@ class LinkedListShell(cmd.Cmd):
             self.ll.show()
 
 
-    def append_operations(self, operation: str, values: list[int | float | str | bool], description: str):
+    def append_operations(
+        self,
+        operation: str,
+        values: list[Any],
+        description: str,
+    ) -> None:
         self.operations.append((operation, values, description))
 
 
