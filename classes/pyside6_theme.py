@@ -34,6 +34,7 @@ class PySideTheme:
     node_min_width: float = 74.0
     node_height: float = 52.0
     node_padding_x: float = 18.0
+    pointer_cell_width: float = 28.0
     node_radius: float = 14.0
     node_stroke_width: float = 2.0
     node_font_family: str = "Avenir"

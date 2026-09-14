@@ -60,6 +60,33 @@ def test_pyside6_renderer_uses_custom_rounded_node_items():
     app.processEvents()
 
 
+def test_node_item_uses_singly_pointer_compartment_layout():
+    app = QApplication.instance() or QApplication([])
+    theme = PySideTheme(pointer_cell_width=28.0)
+    node = LinkedListNodeItem("99", NodeVisualState.NORMAL, theme, node_kind="singly")
+
+    assert node.node_kind == "singly"
+    assert node.pointer_cell_count == 1
+    assert node.value_rect.width() > node.pointer_cell_width
+    assert node.right_pointer_rect.width() == node.pointer_cell_width
+    assert node.left_pointer_rect is None
+    app.processEvents()
+
+
+def test_node_item_uses_doubly_pointer_compartment_layout():
+    app = QApplication.instance() or QApplication([])
+    theme = PySideTheme(pointer_cell_width=28.0)
+    node = LinkedListNodeItem("99", NodeVisualState.NORMAL, theme, node_kind="doubly")
+
+    assert node.node_kind == "doubly"
+    assert node.pointer_cell_count == 2
+    assert node.left_pointer_rect is not None
+    assert node.left_pointer_rect.width() == node.pointer_cell_width
+    assert node.right_pointer_rect.width() == node.pointer_cell_width
+    assert node.value_rect.width() > node.pointer_cell_width
+    app.processEvents()
+
+
 def test_pyside6_renderer_assigns_distinct_node_states():
     app = QApplication.instance() or QApplication([])
     visualizer = LinkedListPySideVisualizer(
@@ -125,6 +152,7 @@ def test_pyside6_renderer_accepts_theme_without_touching_animation_logic():
 
     node_items = [item for item in visualizer.scene.items() if isinstance(item, LinkedListNodeItem)]
     assert node_items[0].theme is theme
+    assert node_items[0].node_kind == "singly"
     assert node_items[0].boundingRect().width() >= 112.0
     app.processEvents()
 

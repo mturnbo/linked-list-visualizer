@@ -2,7 +2,7 @@ import math
 import sys
 from typing import cast
 
-from PySide6.QtCore import QRectF, Qt, QTimer
+from PySide6.QtCore import QPointF, QRectF, Qt, QTimer
 from PySide6.QtGui import QBrush, QColor, QFont, QPainter, QPainterPath, QPen, QPolygonF
 from PySide6.QtWidgets import (
     QApplication,
@@ -34,16 +34,22 @@ class LinkedListNodeItem(QGraphicsItem):
         value: object,
         visual_state: NodeVisualState,
         theme: PySideTheme,
+        node_kind: str = "singly",
         parent: QGraphicsItem | None = None,
     ) -> None:
         super().__init__(parent)
         self.value_text = str(value)
         self.visual_state = visual_state
         self.theme = theme
+        self.node_kind = node_kind
+        self.pointer_cell_count = 2 if node_kind == "doubly" else 1
+        self.pointer_cell_width = theme.pointer_cell_width
         self._font = QFont(theme.node_font_family, theme.node_font_size)
         self._body_rect = self._measure_body()
+        self.left_pointer_rect, self.value_rect, self.right_pointer_rect = self._measure_compartments()
         self.setData(0, "node")
         self.setData(1, visual_state.value)
+        self.setData(2, node_kind)
 
     def boundingRect(self) -> QRectF:
         return self._body_rect.adjusted(
@@ -59,17 +65,65 @@ class LinkedListNodeItem(QGraphicsItem):
         painter.setBrush(QBrush(_color(style.fill)))
         painter.setPen(QPen(_color(style.stroke), style.stroke_width))
         painter.drawRoundedRect(self._body_rect, self.theme.node_radius, self.theme.node_radius)
+        self._draw_compartment_dividers(painter, style.stroke, style.stroke_width)
+        self._draw_pointer_markers(painter, style.stroke)
         painter.setFont(self._font)
         painter.setPen(QPen(_color(style.text), 1))
-        painter.drawText(self._body_rect, Qt.AlignmentFlag.AlignCenter, self.value_text)
+        painter.drawText(self.value_rect, Qt.AlignmentFlag.AlignCenter, self.value_text)
 
     def _measure_body(self) -> QRectF:
         from PySide6.QtGui import QFontMetricsF
 
         metrics = QFontMetricsF(self._font)
         text_width = metrics.horizontalAdvance(self.value_text)
-        width = max(self.theme.node_min_width, text_width + self.theme.node_padding_x * 2)
+        value_width = max(self.theme.node_min_width, text_width + self.theme.node_padding_x * 2)
+        width = value_width + self.pointer_cell_width * self.pointer_cell_count
         return QRectF(-width / 2, -self.theme.node_height / 2, width, self.theme.node_height)
+
+    def _measure_compartments(self) -> tuple[QRectF | None, QRectF, QRectF]:
+        body = self._body_rect
+        left = None
+        value_x = body.left()
+        if self.node_kind == "doubly":
+            left = QRectF(body.left(), body.top(), self.pointer_cell_width, body.height())
+            value_x += self.pointer_cell_width
+        value_width = body.width() - self.pointer_cell_width * self.pointer_cell_count
+        value = QRectF(value_x, body.top(), value_width, body.height())
+        right = QRectF(value.right(), body.top(), self.pointer_cell_width, body.height())
+        return left, value, right
+
+    def _draw_compartment_dividers(self, painter: QPainter, stroke, stroke_width: float) -> None:
+        painter.setPen(QPen(_color(stroke), max(1.0, stroke_width - 0.5)))
+        if self.left_pointer_rect is not None:
+            x = self.left_pointer_rect.right()
+            painter.drawLine(QPointF(x, self._body_rect.top()), QPointF(x, self._body_rect.bottom()))
+        x = self.value_rect.right()
+        painter.drawLine(QPointF(x, self._body_rect.top()), QPointF(x, self._body_rect.bottom()))
+
+    def _draw_pointer_markers(self, painter: QPainter, stroke) -> None:
+        painter.setBrush(QBrush(_color(stroke)))
+        painter.setPen(QPen(_color(stroke), 1))
+        marker_width = 9.0
+        marker_height = 12.0
+        if self.left_pointer_rect is not None:
+            center = self.left_pointer_rect.center()
+            left_marker = QPolygonF(
+                [
+                    QPointF(center.x() - marker_width / 2, center.y()),
+                    QPointF(center.x() + marker_width / 2, center.y() - marker_height / 2),
+                    QPointF(center.x() + marker_width / 2, center.y() + marker_height / 2),
+                ]
+            )
+            painter.drawPolygon(left_marker)
+        center = self.right_pointer_rect.center()
+        right_marker = QPolygonF(
+            [
+                QPointF(center.x() + marker_width / 2, center.y()),
+                QPointF(center.x() - marker_width / 2, center.y() - marker_height / 2),
+                QPointF(center.x() - marker_width / 2, center.y() + marker_height / 2),
+            ]
+        )
+        painter.drawPolygon(right_marker)
 
 
 class LinkedListPySideVisualizer(LinkedListAnimation):
@@ -275,7 +329,7 @@ class LinkedListPySideVisualizer(LinkedListAnimation):
             state = self.node_state_for(frame, visual, blink_on)
             if frame.op_type == "replace" and visual.node_id == frame.replaced_id and progress >= replace_phase:
                 state = NodeVisualState.NORMAL
-            node = LinkedListNodeItem(visual.value, state, self.theme)
+            node = LinkedListNodeItem(visual.value, state, self.theme, node_kind=self.ll_type)
             node.setPos(x, y)
             self.scene.addItem(node)
 
@@ -518,7 +572,7 @@ class LinkedListPySideVisualizer(LinkedListAnimation):
         return QPointF(float(point[0]), float(point[1]))
 
     def _node_half_width(self, value: NodeValue) -> float:
-        item = LinkedListNodeItem(value, NodeVisualState.NORMAL, self.theme)
+        item = LinkedListNodeItem(value, NodeVisualState.NORMAL, self.theme, node_kind=self.ll_type)
         return item.boundingRect().width() / 2
 
 
