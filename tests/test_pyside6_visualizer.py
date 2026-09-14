@@ -8,9 +8,10 @@ import pytest
 
 pytest.importorskip("PySide6")
 
-from PySide6.QtWidgets import QApplication, QGraphicsEllipseItem
+from PySide6.QtWidgets import QApplication, QGraphicsPathItem
 
-from classes.pyside6_visualizer import LinkedListPySideVisualizer
+from classes.pyside6_theme import NodeVisualState
+from classes.pyside6_visualizer import LinkedListNodeItem, LinkedListPySideVisualizer
 
 
 def test_pyside6_renderer_draws_supported_operation_frames():
@@ -36,8 +37,77 @@ def test_pyside6_renderer_draws_supported_operation_frames():
         visualizer.render_frame(frames, frame, progress=1.0, frame_index=index, elapsed=1.0)
         assert visualizer.scene.items()
 
-    node_items = [item for item in visualizer.scene.items() if isinstance(item, QGraphicsEllipseItem)]
+    node_items = [item for item in visualizer.scene.items() if isinstance(item, LinkedListNodeItem)]
     assert node_items
+    app.processEvents()
+
+
+def test_pyside6_renderer_uses_custom_rounded_node_items():
+    app = QApplication.instance() or QApplication([])
+    visualizer = LinkedListPySideVisualizer(
+        "singly",
+        [("append", ["long-value"], "append long-value")],
+    )
+    frames = visualizer.build_frames(visualizer.operations, visualizer.node_interval)
+
+    visualizer.render_first_frame(frames)
+
+    node_items = [item for item in visualizer.scene.items() if isinstance(item, LinkedListNodeItem)]
+    assert len(node_items) == 1
+    assert node_items[0].visual_state == NodeVisualState.NEW
+    assert node_items[0].boundingRect().width() >= node_items[0].theme.node_min_width
+    assert node_items[0].boundingRect().width() > node_items[0].theme.node_height
+    app.processEvents()
+
+
+def test_pyside6_renderer_assigns_distinct_node_states():
+    app = QApplication.instance() or QApplication([])
+    visualizer = LinkedListPySideVisualizer(
+        "singly",
+        [
+            ("append", [1], "append 1"),
+            ("append", [2], "append 2"),
+            ("append", [3], "append 3"),
+            ("replace", [0, 9], "replace 9"),
+            ("remove", [1], "remove 1"),
+            ("cycle", [0], "cycle"),
+        ],
+    )
+    frames = visualizer.build_frames(visualizer.operations, visualizer.node_interval)
+
+    replace_frame = frames[3]
+    assert visualizer.node_state_for(replace_frame, replace_frame.nodes_after[0], blink_on=True) == NodeVisualState.CHANGED
+    assert visualizer.node_state_for(replace_frame, replace_frame.nodes_after[2], blink_on=False) == NodeVisualState.CURRENT
+
+    remove_frame = frames[4]
+    assert visualizer.node_state_for(remove_frame, remove_frame.nodes_before[1], blink_on=True) == NodeVisualState.REMOVING
+
+    cycle_frame = frames[5]
+    assert visualizer.node_state_for(cycle_frame, cycle_frame.nodes_after[0], blink_on=False) == NodeVisualState.CYCLE_ENDPOINT
+    assert visualizer.node_state_for(cycle_frame, cycle_frame.nodes_after[-1], blink_on=False) == NodeVisualState.CYCLE_ENDPOINT
+    app.processEvents()
+
+
+def test_pyside6_renderer_draws_curved_cycle_link_and_styled_paths():
+    app = QApplication.instance() or QApplication([])
+    visualizer = LinkedListPySideVisualizer(
+        "singly",
+        [
+            ("append", [1], "append 1"),
+            ("append", [2], "append 2"),
+            ("append", [3], "append 3"),
+            ("cycle", [0], "cycle"),
+        ],
+    )
+    frames = visualizer.build_frames(visualizer.operations, visualizer.node_interval)
+
+    visualizer.render_frame(frames, frames[-1], progress=1.0, frame_index=len(frames) - 1, elapsed=1.0)
+
+    path_items = [item for item in visualizer.scene.items() if isinstance(item, QGraphicsPathItem)]
+    cycle_paths = [item for item in path_items if item.data(0) == "cycle-link"]
+    assert cycle_paths
+    assert any(path.path().elementCount() > 2 for path in cycle_paths)
+    assert all(path.pen().widthF() >= visualizer.theme.arrow_stroke_width for path in path_items)
     app.processEvents()
 
 
