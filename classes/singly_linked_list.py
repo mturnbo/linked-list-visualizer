@@ -2,14 +2,17 @@
 
 from typing import Any
 
-from constants import PRINT_ARROW_DOWN
-from constants import PRINT_ARROW_LEFT
-from constants import PRINT_ARROW_SINGLE as LINK_ARROW
-from constants import PRINT_ARROW_UP
-from constants import PRINT_COLOR
-from constants import RESET
-from linked_list.base import _MISSING
 from linked_list import SinglyLinkedList as PackageSinglyLinkedList
+from linked_list.base import _MISSING
+
+from constants import (
+    PRINT_ARROW_DOWN,
+    PRINT_ARROW_LEFT,
+    PRINT_ARROW_UP,
+    PRINT_COLOR,
+    RESET,
+)
+from constants import PRINT_ARROW_SINGLE as LINK_ARROW
 
 
 class SinglyLinkedList(PackageSinglyLinkedList):

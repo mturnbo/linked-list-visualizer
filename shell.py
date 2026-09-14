@@ -3,9 +3,9 @@
 import cmd
 from typing import Any
 
-from classes.singly_linked_list import SinglyLinkedList
 from classes.doubly_linked_list import DoublyLinkedList
 from classes.linked_list import LinkedList
+from classes.singly_linked_list import SinglyLinkedList
 
 
 class LinkedListShell(cmd.Cmd):
@@ -136,6 +136,29 @@ class LinkedListShell(cmd.Cmd):
 
         ll_type = "singly" if self.ll.__class__.__name__ == "SinglyLinkedList" else "doubly"
         llv = LinkedListVisualizer(
+            ll_type=ll_type,
+            operations=self.operations
+        )
+        wh = [int(x) for x in arg.split(' ') if x]
+        width = 1200
+        height = 800
+        if len(wh):
+            print(f"Setting window size to {wh}")
+            width, height = wh
+        params = {
+            "width": width,
+            "height": height,
+        }
+        llv.configure(params)
+        llv.display()
+
+
+    def do_gui(self, arg):
+        """Animate the linked list with PySide6. Usage: gui [width] [height]"""
+        from classes.pyside6_visualizer import LinkedListPySideVisualizer
+
+        ll_type = "singly" if self.ll.__class__.__name__ == "SinglyLinkedList" else "doubly"
+        llv = LinkedListPySideVisualizer(
             ll_type=ll_type,
             operations=self.operations
         )

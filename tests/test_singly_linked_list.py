@@ -1,5 +1,7 @@
 import pytest
+
 from classes.singly_linked_list import SinglyLinkedList
+
 
 @pytest.fixture(autouse=True)
 def sll():

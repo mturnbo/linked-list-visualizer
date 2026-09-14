@@ -1,4 +1,4 @@
-from utils import filter_values,  to_ll_type
+from utils import filter_values, to_ll_type
 
 
 def test_filter_values():

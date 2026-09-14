@@ -1,97 +1,14 @@
 import math
-from dataclasses import dataclass
-from classes.linked_list import LinkedList
-from typing import List, Optional, Tuple, Any, Dict
-from constants import *
+
 import pygame
 
+from classes.animation import LinkedListAnimation, NodeState, NodeVisual, OperationFrame
+from constants import *
 
-@dataclass
-class NodeState:
-    node_id: int
-    value: int | float | str | bool
-
-
-@dataclass
-class NodeVisual:
-    node_id: int
-    value: int | float | str | bool
-    position: Tuple[int, int]
-    row: int
-    col: int
+__all__ = ["LinkedListVisualizer", "NodeState", "NodeVisual", "OperationFrame"]
 
 
-@dataclass
-class OperationFrame:
-    op_type: str
-    duration: float
-    nodes_before: List[NodeState]
-    nodes_after: List[NodeState]
-    added_id: Optional[int] = None
-    fade_id: Optional[int] = None
-    removed_id: Optional[int] = None
-    replaced_id: Optional[int] = None
-    current_new_id: Optional[int] = None
-    cycle_link: Optional[Tuple[int, int]] = None
-    label: str = ""
-
-
-class LinkedListVisualizer:
-    def __init__(self, ll_type:str, operations: List[Tuple[str, List[int | float | str | bool], str]], width: int = DEFAULT_WIDTH,
-                 height: int = DEFAULT_HEIGHT, node_interval: float = DEFAULT_INTERVAL,
-                 arrow_interval: float = DEFAULT_INTERVAL):
-        self.ll_type = ll_type
-        self.operations = operations
-        self.width = width
-        self.height = height
-        self.node_interval = node_interval
-        self.arrow_interval = arrow_interval
-
-    @staticmethod
-    def _sort_key(value):
-        return (str(type(value)), str(value))
-
-    def configure(self, params: Dict[str, Any]):
-        if params.get("node_interval"):
-            self.node_interval = params["node_interval"]
-        if params.get("arrow_interval"):
-            self.arrow_interval = params["arrow_interval"]
-        if params.get("width"):
-            self.width = params["width"]
-        if params.get("height"):
-            self.height = params["height"]
-
-    def clamp(self, value: float, min_value: float, max_value: float) -> float:
-        return max(min_value, min(value, max_value))
-
-    def lerp_color(self, color_a, color_b, t: float):
-        t = self.clamp(t, 0.0, 1.0)
-        return (
-            int(color_a[0] + (color_b[0] - color_a[0]) * t),
-            int(color_a[1] + (color_b[1] - color_a[1]) * t),
-            int(color_a[2] + (color_b[2] - color_a[2]) * t),
-        )
-
-    def layout_nodes(self, nodes: List[NodeState], width: int, height: int) -> List[NodeVisual]:
-        count = max(1, len(nodes))
-        margin = 80
-        usable_width = max(200, width - margin * 2 - PANEL_WIDTH)
-        min_spacing = 180
-        max_per_row = max(1, int(usable_width // min_spacing) + 1)
-        per_row = min(count, max_per_row)
-        rows = math.ceil(count / per_row)
-        spacing_x = usable_width / max(1, per_row - 1)
-        usable_height = max(200, height - margin * 2)
-        spacing_y = usable_height / max(1, rows - 1)
-
-        visuals = []
-        for index, node in enumerate(nodes):
-            row = index // per_row
-            col = index % per_row
-            x = int(PANEL_WIDTH + margin + col * spacing_x)
-            y = int(margin + row * spacing_y)
-            visuals.append(NodeVisual(node.node_id, node.value, (x, y), row, col))
-        return visuals
+class LinkedListVisualizer(LinkedListAnimation):
 
     def draw_arrow(self, surface, start, end, color, progress=1.0, width=2, arrow_size=12):
         progress = self.clamp(progress, 0.0, 1.0)
@@ -157,217 +74,6 @@ class LinkedListVisualizer:
             final_end = segments[-1][1]
             self.draw_arrow(surface, final_start, final_end, color, progress=1.0, width=width, arrow_size=arrow_size)
 
-    def build_frames(
-            self,
-            operations: List[Tuple[str, List[int | float | str | bool], str]],
-            interval: float,
-    ) -> List[OperationFrame]:
-        linked_list = LinkedList.create(self.ll_type)
-        nodes = []
-        next_id = len(nodes)
-        frames: List[OperationFrame] = []
-        current_new_id = None
-        current_cycle: Optional[Tuple[int, int]] = None
-
-        for command, args, label in operations:
-            size_before = len(nodes)
-            nodes_before = [NodeState(node.node_id, node.value) for node in nodes]
-
-            if command == "append":
-                value = args[0]
-                linked_list.append(value)
-                insert_index = size_before
-                new_node = NodeState(next_id, value)
-                next_id += 1
-                nodes.insert(insert_index, new_node)
-                frames.append(OperationFrame(
-                    op_type="add",
-                    duration=interval,
-                    nodes_before=nodes_before,
-                    nodes_after=[NodeState(node.node_id, node.value) for node in nodes],
-                    added_id=new_node.node_id,
-                    fade_id=current_new_id,
-                    current_new_id=new_node.node_id,
-                    cycle_link=current_cycle,
-                    label=label,
-                ))
-                current_new_id = new_node.node_id
-            elif command == "prepend":
-                value = args[0]
-                linked_list.prepend(value)
-                insert_index = 0
-                new_node = NodeState(next_id, value)
-                next_id += 1
-                nodes.insert(insert_index, new_node)
-                frames.append(OperationFrame(
-                    op_type="add",
-                    duration=interval,
-                    nodes_before=nodes_before,
-                    nodes_after=[NodeState(node.node_id, node.value) for node in nodes],
-                    added_id=new_node.node_id,
-                    fade_id=current_new_id,
-                    current_new_id=new_node.node_id,
-                    cycle_link=current_cycle,
-                    label=label,
-                ))
-                current_new_id = new_node.node_id
-            elif command == "insert":
-                index, value = args
-                if index <= 0:
-                    insert_index = 0
-                elif index >= size_before:
-                    insert_index = size_before
-                else:
-                    insert_index = index
-                linked_list.insert(insert_index, value)
-                new_node = NodeState(next_id, value)
-                next_id += 1
-                nodes.insert(insert_index, new_node)
-                frames.append(OperationFrame(
-                    op_type="add",
-                    duration=interval,
-                    nodes_before=nodes_before,
-                    nodes_after=[NodeState(node.node_id, node.value) for node in nodes],
-                    added_id=new_node.node_id,
-                    fade_id=current_new_id,
-                    current_new_id=new_node.node_id,
-                    cycle_link=current_cycle,
-                    label=label,
-                ))
-                current_new_id = new_node.node_id
-            elif command == "remove":
-                if size_before == 0:
-                    continue
-                index = args[0]
-                if index <= 0:
-                    remove_index = 0
-                elif index >= size_before - 1:
-                    remove_index = size_before - 1
-                else:
-                    remove_index = index
-                removed_node = nodes[remove_index]
-                linked_list.remove(remove_index)
-                nodes.pop(remove_index)
-                if current_new_id == removed_node.node_id:
-                    current_new_id = None
-                frames.append(OperationFrame(
-                    op_type="remove",
-                    duration=interval,
-                    nodes_before=nodes_before,
-                    nodes_after=[NodeState(node.node_id, node.value) for node in nodes],
-                    removed_id=removed_node.node_id,
-                    current_new_id=current_new_id,
-                    cycle_link=current_cycle,
-                    label=label,
-                ))
-            elif command == "replace":
-                if size_before == 0:
-                    continue
-                index, value = args
-                if index <= 0:
-                    replace_index = 0
-                elif index >= size_before - 1:
-                    replace_index = size_before - 1
-                else:
-                    replace_index = index
-                linked_list.replace(replace_index, value)
-                nodes[replace_index] = NodeState(nodes[replace_index].node_id, value)
-                frames.append(OperationFrame(
-                    op_type="replace",
-                    duration=interval,
-                    nodes_before=nodes_before,
-                    nodes_after=[NodeState(node.node_id, node.value) for node in nodes],
-                    replaced_id=nodes[replace_index].node_id,
-                    current_new_id=current_new_id,
-                    cycle_link=current_cycle,
-                    label=label,
-                ))
-            elif command == "reverse":
-                if size_before == 0:
-                    continue
-                linked_list.reverse()
-                nodes = list(reversed(nodes))
-                frames.append(OperationFrame(
-                    op_type="reverse",
-                    duration=interval,
-                    nodes_before=nodes_before,
-                    nodes_after=[NodeState(node.node_id, node.value) for node in nodes],
-                    current_new_id=current_new_id,
-                    cycle_link=current_cycle,
-                    label=label,
-                ))
-            elif command == "sort":
-                if size_before == 0:
-                    continue
-                sort_method = args[0] if args else 1
-                if linked_list.sort(method=sort_method):
-                    nodes = sorted(nodes, key=lambda node: self._sort_key(node.value))
-                    current_cycle = None
-                    frames.append(OperationFrame(
-                        op_type="sort",
-                        duration=interval,
-                        nodes_before=nodes_before,
-                        nodes_after=[NodeState(node.node_id, node.value) for node in nodes],
-                        current_new_id=current_new_id,
-                        cycle_link=current_cycle,
-                        label=label,
-                    ))
-            elif command == "cycle":
-                if self.ll_type == "singly":
-                    if size_before == 0:
-                        continue
-                    start_index = args[0]
-                    linked_list.create_cycle(start_index)
-                    start_node_id = None
-                    end_node_id = None
-
-                    if 0 <= start_index <= len(nodes) - 2:
-                        try:
-                            start_node_id = nodes[start_index].node_id
-                            end_node_id = nodes[-1].node_id
-                        except IndexError:
-                            start_node_id = None
-                            end_node_id = None
-                    if start_node_id is not None and end_node_id is not None:
-                        current_cycle = (end_node_id, start_node_id)
-                frames.append(OperationFrame(
-                    op_type="cycle",
-                    duration=interval,
-                    nodes_before=nodes_before,
-                    nodes_after=[NodeState(node.node_id, node.value) for node in nodes],
-                    current_new_id=current_new_id,
-                    cycle_link=current_cycle,
-                    label=label,
-                ))
-            elif command == "has_cycle":
-                result = linked_list.has_cycle()
-                frames.append(OperationFrame(
-                    op_type="has_cycle",
-                    duration=interval,
-                    nodes_before=nodes_before,
-                    nodes_after=[NodeState(node.node_id, node.value) for node in nodes],
-                    current_new_id=current_new_id,
-                    cycle_link=current_cycle,
-                    label=f"{label} => {result}",
-                ))
-            else:
-                raise ValueError(f"Unsupported operation '{command}'.")
-
-        return frames
-
-    def get_frame_at_time(self, frames: List[OperationFrame], elapsed: float) -> Tuple[OperationFrame, float, int]:
-        if not frames:
-            empty_frame = OperationFrame("idle", 1.0, [], [])
-            return empty_frame, 0.0, -1
-        total = 0.0
-        for index, frame in enumerate(frames):
-            total += frame.duration
-            if elapsed <= total:
-                frame_elapsed = elapsed - (total - frame.duration)
-                progress = self.clamp(frame_elapsed / max(frame.duration, 0.01), 0.0, 1.0)
-                return frame, progress, index
-        return frames[-1], 1.0, len(frames) - 1
-
     def display(self):
         frames = self.build_frames(self.operations, self.node_interval)
         pygame.init()
@@ -392,13 +98,13 @@ class LinkedListVisualizer:
 
             if frame.op_type == "remove" and progress < remove_phase:
                 nodes_render = frame.nodes_before
-                blink_on = int((now / 0.2)) % 2 == 0
+                blink_on = int(now / 0.2) % 2 == 0
             elif frame.op_type == "remove":
                 nodes_render = frame.nodes_after
                 blink_on = False
             elif frame.op_type == "replace":
                 nodes_render = frame.nodes_after
-                blink_on = int((now / 0.2)) % 2 == 0
+                blink_on = int(now / 0.2) % 2 == 0
             elif frame.op_type == "sort":
                 sort_remove_phase = 0.7
                 if progress < sort_remove_phase:

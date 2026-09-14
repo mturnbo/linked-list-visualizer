@@ -1,5 +1,7 @@
 import pytest
+
 from classes.doubly_linked_list import DoublyLinkedList
+
 
 @pytest.fixture(autouse=True)
 def dll():

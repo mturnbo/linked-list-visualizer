@@ -4,8 +4,9 @@ from typing import Any
 
 from classes.doubly_linked_list import DoublyLinkedList
 from classes.singly_linked_list import SinglyLinkedList
-from utils import filter_values
-from utils import to_ll_type
+from utils import filter_values, to_ll_type
+
+NodeValue = int | float | str | bool
 
 
 class LinkedList:
@@ -55,7 +56,7 @@ class LinkedList:
     @staticmethod
     def build_from_ops(
         ll_type: str,
-        operations: list[tuple[str, list[int | float | str | bool], str]],
+        operations: list[tuple[str, list[NodeValue], str]],
     ) -> SinglyLinkedList | DoublyLinkedList:
         """Build a linked list by replaying visualizer operations.
 
@@ -77,18 +78,18 @@ class LinkedList:
                 case "prepend":
                     ll.prepend(to_ll_type(op[1][0]))
                 case "insert":
-                    ll.insert(op[1][0], to_ll_type(op[1][1]))
+                    ll.insert(int(op[1][0]), to_ll_type(op[1][1]))
                 case "remove":
-                    ll.remove(op[1][0])
+                    ll.remove(int(op[1][0]))
                 case "replace":
-                    ll.replace(op[1][0], to_ll_type(op[1][1]))
+                    ll.replace(int(op[1][0]), to_ll_type(op[1][1]))
                 case "cycle":
-                    ll.create_cycle(op[1][0])
+                    ll.create_cycle(int(op[1][0]))
                 case "has_cycle":
                     result = ll.has_cycle()
                     print(f"Has cycle: {result}")
                 case "sort":
-                    method = op[1][0] if op[1] else 1
+                    method = int(op[1][0]) if op[1] else 1
                     ll.sort(method=method)
                 case _:
                     raise ValueError(f"Unknown operation type '{op[0]}' in operations file.")

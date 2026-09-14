@@ -5,6 +5,7 @@ requires-python = ">=3.12"
 dependencies = [
     "mt-linked-list @ git+https://github.com/mturnbo/LinkedList.git",
     "pygame",
+    "pyside6>=6.11.2",
 ]
 
 [dependency-groups]
@@ -13,3 +14,7 @@ dev = [
     "pytest",
     "ruff",
 ]
+
+[[tool.mypy.overrides]]
+module = ["linked_list", "linked_list.*"]
+ignore_missing_imports = true
