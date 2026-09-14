@@ -1,9 +1,9 @@
-from classes.visualizer import LinkedListVisualizer
+from classes.animation import LinkedListAnimation
 
 
 def build_frames(ll_type, operations):
-    visualizer = LinkedListVisualizer(ll_type, operations)
-    return visualizer.build_frames(operations, interval=0.25)
+    animation = LinkedListAnimation(ll_type, operations)
+    return animation.build_frames(operations, interval=0.25)
 
 
 def values(nodes):
