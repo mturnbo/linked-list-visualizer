@@ -70,6 +70,8 @@ def test_node_item_uses_singly_pointer_compartment_layout():
     assert node.value_rect.width() > node.pointer_cell_width
     assert node.right_pointer_rect.width() == node.pointer_cell_width
     assert node.left_pointer_rect is None
+    assert node.outgoing_anchor().x() > node.value_rect.right()
+    assert node.outgoing_anchor().x() < node.boundingRect().right()
     app.processEvents()
 
 
@@ -84,6 +86,65 @@ def test_node_item_uses_doubly_pointer_compartment_layout():
     assert node.left_pointer_rect.width() == node.pointer_cell_width
     assert node.right_pointer_rect.width() == node.pointer_cell_width
     assert node.value_rect.width() > node.pointer_cell_width
+    assert node.incoming_anchor().x() < node.value_rect.left()
+    assert node.outgoing_anchor().x() > node.value_rect.right()
+    app.processEvents()
+
+
+def test_singly_link_starts_inside_pointer_compartment():
+    app = QApplication.instance() or QApplication([])
+    visualizer = LinkedListPySideVisualizer(
+        "singly",
+        [
+            ("append", [1], "append 1"),
+            ("append", [2], "append 2"),
+        ],
+    )
+    frames = visualizer.build_frames(visualizer.operations, visualizer.node_interval)
+
+    visualizer.render_frame(frames, frames[-1], progress=1.0, frame_index=1, elapsed=1.0)
+
+    link = next(item for item in visualizer.scene.items() if isinstance(item, QGraphicsPathItem) and item.data(0) == "link")
+    first_node = next(
+        item
+        for item in visualizer.scene.items()
+        if isinstance(item, LinkedListNodeItem) and item.value_text == "1"
+    )
+    first_element = link.path().elementAt(0)
+    start_x = first_element.x
+    assert start_x > first_node.scenePos().x() + first_node.value_rect.right()
+    assert start_x < first_node.scenePos().x() + first_node.boundingRect().right()
+    app.processEvents()
+
+
+def test_doubly_reverse_link_starts_inside_left_pointer_compartment():
+    app = QApplication.instance() or QApplication([])
+    visualizer = LinkedListPySideVisualizer(
+        "doubly",
+        [
+            ("append", [1], "append 1"),
+            ("append", [2], "append 2"),
+        ],
+    )
+    frames = visualizer.build_frames(visualizer.operations, visualizer.node_interval)
+
+    visualizer.render_frame(frames, frames[-1], progress=1.0, frame_index=1, elapsed=1.0)
+
+    reverse_link = next(
+        item
+        for item in visualizer.scene.items()
+        if isinstance(item, QGraphicsPathItem) and item.data(0) == "reverse-link"
+    )
+    second_node = next(
+        item
+        for item in visualizer.scene.items()
+        if isinstance(item, LinkedListNodeItem) and item.value_text == "2"
+    )
+    first_element = reverse_link.path().elementAt(0)
+    start_x = first_element.x
+    assert second_node.left_pointer_rect is not None
+    assert start_x > second_node.scenePos().x() + second_node.left_pointer_rect.left()
+    assert start_x < second_node.scenePos().x() + second_node.value_rect.left()
     app.processEvents()
 
 
