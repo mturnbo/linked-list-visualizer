@@ -1,8 +1,8 @@
 import argparse
 from pathlib import Path
 
-from constants import DEFAULT_VALUES
 from classes.linked_list import LinkedList
+from constants import DEFAULT_VALUES
 
 
 def parse_values(raw_values: str) -> list[int | float | str | bool]:

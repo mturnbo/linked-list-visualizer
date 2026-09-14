@@ -1,6 +1,7 @@
-from classes.linked_list import LinkedList
 from linked_list import DoublyLinkedList as PackageDoublyLinkedList
 from linked_list import SinglyLinkedList as PackageSinglyLinkedList
+
+from classes.linked_list import LinkedList
 
 
 def test_create_uses_package_singly_linked_list():

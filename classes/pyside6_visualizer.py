@@ -2,7 +2,7 @@ import math
 import sys
 
 from PySide6.QtCore import QTimer
-from PySide6.QtGui import QColor, QFont, QPainterPath, QPen, QBrush, QPolygonF
+from PySide6.QtGui import QBrush, QColor, QFont, QPainterPath, QPen, QPolygonF
 from PySide6.QtWidgets import (
     QApplication,
     QGraphicsEllipseItem,
@@ -85,14 +85,12 @@ class LinkedListPySideVisualizer(LinkedListAnimation):
         elapsed: float,
     ) -> tuple[list[NodeState], bool]:
         remove_phase = 0.8
-        replace_phase = 0.6
-
         if frame.op_type == "remove" and progress < remove_phase:
-            return frame.nodes_before, int((elapsed / 0.2)) % 2 == 0
+            return frame.nodes_before, int(elapsed / 0.2) % 2 == 0
         if frame.op_type == "remove":
             return frame.nodes_after, False
         if frame.op_type == "replace":
-            return frame.nodes_after, int((elapsed / 0.2)) % 2 == 0
+            return frame.nodes_after, int(elapsed / 0.2) % 2 == 0
         if frame.op_type == "sort":
             sort_remove_phase = 0.7
             if progress < sort_remove_phase:

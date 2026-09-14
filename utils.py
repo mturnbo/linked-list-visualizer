@@ -1,6 +1,7 @@
-from typing import List, Any
+from typing import Any
 
-def filter_values(value_list: List[Any]) -> List[int | float | str | bool]:
+
+def filter_values(value_list: list[Any]) -> list[int | float | str | bool]:
     return list(filter(lambda x: type(x) in [int, float, str, bool], value_list))
 
 

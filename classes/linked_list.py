@@ -4,8 +4,7 @@ from typing import Any
 
 from classes.doubly_linked_list import DoublyLinkedList
 from classes.singly_linked_list import SinglyLinkedList
-from utils import filter_values
-from utils import to_ll_type
+from utils import filter_values, to_ll_type
 
 
 class LinkedList:

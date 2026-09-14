@@ -5,7 +5,6 @@ from typing import Any
 from classes.linked_list import LinkedList
 from constants import DEFAULT_HEIGHT, DEFAULT_INTERVAL, DEFAULT_WIDTH, PANEL_WIDTH
 
-
 NodeValue = int | float | str | bool
 Operation = tuple[str, list[NodeValue], str]
 

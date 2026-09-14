@@ -1,5 +1,6 @@
 from classes.node import Node
 
+
 def test_node_singly_linked_list_usage():
     first = Node(1)
     second = Node(2)

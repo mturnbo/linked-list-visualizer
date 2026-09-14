@@ -98,13 +98,13 @@ class LinkedListVisualizer(LinkedListAnimation):
 
             if frame.op_type == "remove" and progress < remove_phase:
                 nodes_render = frame.nodes_before
-                blink_on = int((now / 0.2)) % 2 == 0
+                blink_on = int(now / 0.2) % 2 == 0
             elif frame.op_type == "remove":
                 nodes_render = frame.nodes_after
                 blink_on = False
             elif frame.op_type == "replace":
                 nodes_render = frame.nodes_after
-                blink_on = int((now / 0.2)) % 2 == 0
+                blink_on = int(now / 0.2) % 2 == 0
             elif frame.op_type == "sort":
                 sort_remove_phase = 0.7
                 if progress < sort_remove_phase:

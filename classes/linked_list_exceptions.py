@@ -1,8 +1,6 @@
 """Compatibility imports for linked list package exceptions."""
 
-from linked_list import CycleDetectedException
-from linked_list import EmptyValueException
-from linked_list import ValueTypeException
+from linked_list import CycleDetectedException, EmptyValueException, ValueTypeException
 
 __all__ = [
     "CycleDetectedException",

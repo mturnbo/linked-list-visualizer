@@ -2,11 +2,11 @@
 
 from typing import Any
 
-from constants import PRINT_ARROW_DOUBLE as LINK_ARROW
-from constants import PRINT_COLOR
-from constants import RESET
-from linked_list.base import _MISSING
 from linked_list import DoublyLinkedList as PackageDoublyLinkedList
+from linked_list.base import _MISSING
+
+from constants import PRINT_ARROW_DOUBLE as LINK_ARROW
+from constants import PRINT_COLOR, RESET
 
 
 class DoublyLinkedList(PackageDoublyLinkedList):
@@ -65,7 +65,7 @@ class DoublyLinkedList(PackageDoublyLinkedList):
         Returns:
             None.
         """
-        return None
+        return
 
     def create_cycle(self, start: int) -> bool:
         """Keep historical visualizer behavior for doubly lists.
