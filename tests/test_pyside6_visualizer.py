@@ -8,7 +8,12 @@ import pytest
 
 pytest.importorskip("PySide6")
 
-from PySide6.QtWidgets import QApplication, QGraphicsPathItem, QGraphicsTextItem
+from PySide6.QtWidgets import (
+    QApplication,
+    QGraphicsPathItem,
+    QGraphicsPolygonItem,
+    QGraphicsTextItem,
+)
 
 from classes.pyside6_theme import NodeVisualState, PySideTheme
 from classes.pyside6_visualizer import LinkedListNodeItem, LinkedListPySideVisualizer
@@ -117,7 +122,7 @@ def test_singly_link_starts_inside_pointer_compartment():
     app.processEvents()
 
 
-def test_doubly_reverse_link_starts_inside_left_pointer_compartment():
+def test_doubly_link_uses_double_arrowheads_inside_pointer_compartments():
     app = QApplication.instance() or QApplication([])
     visualizer = LinkedListPySideVisualizer(
         "doubly",
@@ -130,21 +135,40 @@ def test_doubly_reverse_link_starts_inside_left_pointer_compartment():
 
     visualizer.render_frame(frames, frames[-1], progress=1.0, frame_index=1, elapsed=1.0)
 
-    reverse_link = next(
+    bidirectional_link = next(
         item
         for item in visualizer.scene.items()
-        if isinstance(item, QGraphicsPathItem) and item.data(0) == "reverse-link"
+        if isinstance(item, QGraphicsPathItem) and item.data(0) == "bidirectional-link"
+    )
+    first_node = next(
+        item
+        for item in visualizer.scene.items()
+        if isinstance(item, LinkedListNodeItem) and item.value_text == "1"
     )
     second_node = next(
         item
         for item in visualizer.scene.items()
         if isinstance(item, LinkedListNodeItem) and item.value_text == "2"
     )
-    first_element = reverse_link.path().elementAt(0)
+    first_element = bidirectional_link.path().elementAt(0)
+    last_element = bidirectional_link.path().elementAt(bidirectional_link.path().elementCount() - 1)
     start_x = first_element.x
+    end_x = last_element.x
+    assert start_x > first_node.scenePos().x() + first_node.value_rect.right()
+    assert start_x < first_node.scenePos().x() + first_node.boundingRect().right()
     assert second_node.left_pointer_rect is not None
-    assert start_x > second_node.scenePos().x() + second_node.left_pointer_rect.left()
-    assert start_x < second_node.scenePos().x() + second_node.value_rect.left()
+    assert end_x > second_node.scenePos().x() + second_node.left_pointer_rect.left()
+    assert end_x < second_node.scenePos().x() + second_node.value_rect.left()
+    arrowheads = [
+        item
+        for item in visualizer.scene.items()
+        if isinstance(item, QGraphicsPolygonItem) and item.data(0) == "bidirectional-link-arrowhead"
+    ]
+    assert len(arrowheads) == 2
+    assert not any(
+        isinstance(item, QGraphicsPathItem) and item.data(0) == "reverse-link"
+        for item in visualizer.scene.items()
+    )
     app.processEvents()
 
 

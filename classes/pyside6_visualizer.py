@@ -198,8 +198,8 @@ class LinkedListPySideVisualizer(LinkedListAnimation):
         if not visuals:
             self._draw_empty_state()
             return
-        anchor_map = self._draw_links(frame, visuals, progress)
         self._draw_nodes(frame, visuals, progress, blink_on)
+        anchor_map = self._draw_links(frame, visuals, progress)
         self._draw_cycle_link(frame, visuals, progress, anchor_map)
 
     def _resolve_nodes_to_render(
@@ -381,18 +381,16 @@ class LinkedListPySideVisualizer(LinkedListAnimation):
                 end_anchor = anchor_map[next_visual.node_id][0]
                 start = (start_anchor.x(), start_anchor.y())
                 end = (end_anchor.x(), end_anchor.y())
-                self._draw_arrow(start, end, self.theme.arrow, link_progress, self.theme.arrow_stroke_width)
                 if bidirectional:
-                    reverse_start = anchor_map[next_visual.node_id][0]
-                    reverse_end = anchor_map[current.node_id][1]
-                    self._draw_arrow(
-                        (reverse_start.x(), reverse_start.y()),
-                        (reverse_end.x(), reverse_end.y()),
+                    self._draw_bidirectional_arrow(
+                        start,
+                        end,
                         self.theme.arrow_muted,
                         link_progress,
                         self.theme.reverse_arrow_stroke_width,
-                        item_kind="reverse-link",
                     )
+                else:
+                    self._draw_arrow(start, end, self.theme.arrow, link_progress, self.theme.arrow_stroke_width)
 
         return anchor_map
 
@@ -465,7 +463,27 @@ class LinkedListPySideVisualizer(LinkedListAnimation):
         item.setData(0, item_kind)
         self.scene.addItem(item)
         if progress >= 0.98:
-            self._draw_arrow_head(start, end, color, arrow_size)
+            self._draw_arrow_head(start, end, color, arrow_size, item_kind=f"{item_kind}-arrowhead")
+
+    def _draw_bidirectional_arrow(self, start, end, color, progress=1.0, width=2, arrow_size=None) -> None:
+        arrow_size = arrow_size or self.theme.arrow_head_size
+        progress = self.clamp(progress, 0.0, 1.0)
+        if progress <= 0:
+            return
+        end_point = (
+            start[0] + (end[0] - start[0]) * progress,
+            start[1] + (end[1] - start[1]) * progress,
+        )
+        path = QPainterPath()
+        path.moveTo(*start)
+        path.lineTo(*end_point)
+        item = QGraphicsPathItem(path)
+        item.setPen(QPen(self._color(color), width))
+        item.setData(0, "bidirectional-link")
+        self.scene.addItem(item)
+        if progress >= 0.98:
+            self._draw_arrow_head(start, end, color, arrow_size, item_kind="bidirectional-link-arrowhead")
+            self._draw_arrow_head(end, start, color, arrow_size, item_kind="bidirectional-link-arrowhead")
 
     def _draw_polyline_arrow(self, points, color, progress=1.0, width=2, arrow_size=None, item_kind="link") -> None:
         arrow_size = arrow_size or self.theme.arrow_head_size
@@ -504,9 +522,9 @@ class LinkedListPySideVisualizer(LinkedListAnimation):
         item.setData(0, item_kind)
         self.scene.addItem(item)
         if self.clamp(progress, 0.0, 1.0) >= 0.98:
-            self._draw_arrow_head(segments[-1][0], segments[-1][1], color, arrow_size)
+            self._draw_arrow_head(segments[-1][0], segments[-1][1], color, arrow_size, item_kind=f"{item_kind}-arrowhead")
 
-    def _draw_arrow_head(self, start, end, color, arrow_size=12) -> None:
+    def _draw_arrow_head(self, start, end, color, arrow_size=12, item_kind="link-arrowhead") -> None:
         direction = (start[0] - end[0], start[1] - end[1])
         length = math.hypot(direction[0], direction[1])
         if length == 0:
@@ -524,6 +542,7 @@ class LinkedListPySideVisualizer(LinkedListAnimation):
         arrow = QGraphicsPolygonItem(QPolygonF([self._point(end), self._point(left), self._point(right)]))
         arrow.setBrush(QBrush(self._color(color)))
         arrow.setPen(QPen(self._color(color), 1))
+        arrow.setData(0, item_kind)
         self.scene.addItem(arrow)
 
     def _draw_cycle_arrow(self, start, end, control_y, progress: float) -> None:
@@ -541,7 +560,13 @@ class LinkedListPySideVisualizer(LinkedListAnimation):
         item.setData(0, "cycle-link")
         self.scene.addItem(item)
         if progress >= 0.98:
-            self._draw_arrow_head(control_2, end, self.theme.cycle_arrow, self.theme.arrow_head_size)
+            self._draw_arrow_head(
+                control_2,
+                end,
+                self.theme.cycle_arrow,
+                self.theme.arrow_head_size,
+                item_kind="cycle-link-arrowhead",
+            )
 
     def _text_item(self, text: str, size: int, color) -> QGraphicsTextItem:
         item = QGraphicsTextItem(text)
