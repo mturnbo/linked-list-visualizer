@@ -1,4 +1,6 @@
 import os
+import subprocess
+import sys
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
@@ -37,3 +39,26 @@ def test_pyside6_renderer_draws_supported_operation_frames():
     node_items = [item for item in visualizer.scene.items() if isinstance(item, QGraphicsEllipseItem)]
     assert node_items
     app.processEvents()
+
+
+def test_pyside6_visualizer_can_be_constructed_before_qapplication():
+    script = """
+import os
+os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+from classes.pyside6_visualizer import LinkedListPySideVisualizer
+visualizer = LinkedListPySideVisualizer("singly", [("append", [1], "append 1")])
+frames = visualizer.build_frames(visualizer.operations, visualizer.node_interval)
+visualizer.render_first_frame(frames)
+assert visualizer.scene.items()
+print("ok")
+"""
+
+    result = subprocess.run(
+        [sys.executable, "-c", script],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "ok" in result.stdout

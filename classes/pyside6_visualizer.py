@@ -1,5 +1,6 @@
 import math
 import sys
+from typing import cast
 
 from PySide6.QtCore import QTimer
 from PySide6.QtGui import QBrush, QColor, QFont, QPainterPath, QPen, QPolygonF
@@ -22,30 +23,41 @@ from constants import *
 class LinkedListPySideVisualizer(LinkedListAnimation):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.scene = QGraphicsScene()
-        self.view = QGraphicsView(self.scene)
+        self._app: QApplication | None = None
+        self._scene: QGraphicsScene | None = None
+        self._view: QGraphicsView | None = None
+
+    @property
+    def scene(self) -> QGraphicsScene:
+        if self._scene is None:
+            self._ensure_qt_app()
+            self._scene = QGraphicsScene()
+        return self._scene
+
+    @property
+    def view(self) -> QGraphicsView:
+        if self._view is None:
+            self._ensure_qt_app()
+            self._view = QGraphicsView(self.scene)
+        return self._view
 
     def display(self):
-        app = QApplication.instance() or QApplication(sys.argv)
+        app = self._ensure_qt_app()
+        self._ensure_qt_view()
         window = QMainWindow()
         window.setWindowTitle("Linked List Visualization")
         window.resize(self.width, self.height)
         window.setCentralWidget(self.view)
 
         frames = self.build_frames(self.operations, self.node_interval)
-        start_time = 0.0
+        elapsed = 0.0
 
         def tick():
-            nonlocal start_time
-            if start_time == 0.0:
-                start_time = self.view.window().property("start_time")
-            elapsed = self.view.window().property("elapsed_seconds")
-            self.view.window().setProperty("elapsed_seconds", elapsed + 1 / 60)
+            nonlocal elapsed
+            elapsed += 1 / 60
             frame, progress, frame_index = self.get_frame_at_time(frames, elapsed)
             self.render_frame(frames, frame, progress, frame_index, elapsed)
 
-        window.setProperty("start_time", 0.0)
-        window.setProperty("elapsed_seconds", 0.0)
         self.render_first_frame(frames)
 
         timer = QTimer(window)
@@ -54,6 +66,18 @@ class LinkedListPySideVisualizer(LinkedListAnimation):
 
         window.show()
         app.exec()
+
+    def _ensure_qt_view(self) -> None:
+        _ = self.view
+
+    def _ensure_qt_app(self) -> QApplication:
+        app = QApplication.instance()
+        if app is None:
+            self._app = QApplication(sys.argv[:1])
+            return self._app
+        if not isinstance(app, QApplication):
+            raise TypeError("PySide6 visualizer requires a QApplication instance.")
+        return cast(QApplication, app)
 
     def render_first_frame(self, frames: list[OperationFrame]) -> None:
         frame, progress, frame_index = self.get_frame_at_time(frames, 0.0)
