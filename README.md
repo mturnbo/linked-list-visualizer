@@ -16,9 +16,10 @@ printed to the command line or displayed graphically with animation.
 ### Requirements
 - Python 3.12+
 - `uv`
+- `mt-linked-list`, installed from [github.com/mturnbo/LinkedList](https://github.com/mturnbo/LinkedList)
 
 ### Installation
-Install project dependencies:
+Install project dependencies, including the linked list package from GitHub:
 ```bash
 uv sync
 ```

@@ -3,7 +3,7 @@ name = "linkedlistvisualizer"
 version = "0.1.0"
 requires-python = ">=3.12"
 dependencies = [
-    "mt-linked-list @ file:///Users/marcus/projects/mt/LinkedListModule",
+    "mt-linked-list @ git+https://github.com/mturnbo/LinkedList.git",
     "pygame",
 ]
 

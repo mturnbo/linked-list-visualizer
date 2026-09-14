@@ -207,7 +207,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "mt-linked-list", directory = "../LinkedListModule" },
+    { name = "mt-linked-list", git = "https://github.com/mturnbo/LinkedList.git" },
     { name = "pygame" },
 ]
 
@@ -221,7 +221,7 @@ dev = [
 [[package]]
 name = "mt-linked-list"
 version = "1.1.0"
-source = { directory = "../LinkedListModule" }
+source = { git = "https://github.com/mturnbo/LinkedList.git", commit = "fd9116e9fdd845781af5213ea20bdda87dac53c7" }
 
 [package.metadata]
 
