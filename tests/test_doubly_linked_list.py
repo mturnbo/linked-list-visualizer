@@ -110,7 +110,7 @@ def test_str_empty_list(dll):
 
 def test_str_multiple_elements(dll_123):
     result = str(dll_123)
-    assert "Doubly Linked List | 3 Elements:\n[1 \u21D4 2 \u21D4 3]" in result
+    assert "Doubly Linked List | 3 Elements:\n[1] \u21D4 [2] \u21D4 [3]" in result
 
 
 def test_sort_merge():

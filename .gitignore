@@ -26,3 +26,5 @@ logs
 ### Cache ###
 .eslintcache
 __pycache__/
+
+AGENTS.md

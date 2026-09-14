@@ -1,4 +1,25 @@
 from classes.linked_list import LinkedList
+from linked_list import DoublyLinkedList as PackageDoublyLinkedList
+from linked_list import SinglyLinkedList as PackageSinglyLinkedList
+
+
+def test_create_uses_package_singly_linked_list():
+    ll = LinkedList.create("singly")
+
+    assert isinstance(ll, PackageSinglyLinkedList)
+
+
+def test_create_uses_package_doubly_linked_list():
+    ll = LinkedList.create("doubly")
+
+    assert isinstance(ll, PackageDoublyLinkedList)
+
+
+def test_build_linked_list_from_values_coerces_cli_values():
+    values = ["1", "2.5", "true", "word"]
+    ll = LinkedList.build_from_values("singly", values)
+
+    assert ll.get_values() == [1, 2.5, True, "word"]
 
 def test_create_linked_list():
     ll = LinkedList.create("singly")

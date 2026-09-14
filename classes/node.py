@@ -1,11 +1,5 @@
-from dataclasses import dataclass
+"""Compatibility import for the linked list package node type."""
 
-@dataclass
-class Node:
-    """Class for a single node in a linked list."""
-    value: int | float | str | bool
-    prev = None
-    next = None
+from linked_list import Node
 
-    def __repr__(self):
-        return f"Node[{self.value}]"
+__all__ = ["Node"]
