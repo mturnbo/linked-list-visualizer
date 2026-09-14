@@ -43,7 +43,8 @@ class SinglyLinkedList(PackageSinglyLinkedList):
         """
         values = self.get_values()
         header = f"Singly Linked List | {self.size} Elements:"
-        nodes = f"[{LINK_ARROW.join(map(str, values))}]"
+        node_values = [f"[{value}]" for value in values]
+        nodes = LINK_ARROW.join(node_values) if node_values else "[]"
         cycle = self._cycle_marker(values, nodes)
 
         return f"\n{PRINT_COLOR}{header}\n{nodes}\n{cycle}{RESET}\n"
@@ -62,15 +63,15 @@ class SinglyLinkedList(PackageSinglyLinkedList):
         if cycle_index is None:
             return ""
 
-        value_lengths = [len(str(value)) for value in values]
+        value_lengths = [len(f"[{value}]") for value in values]
         length_to_cycle_index = (
             sum(value_lengths[:cycle_index])
             + (cycle_index * len(LINK_ARROW))
-            + 1
         )
         cycle = f"{' ' * length_to_cycle_index}{PRINT_ARROW_UP}"
 
-        length_to_tail = len(nodes) - length_to_cycle_index - 3
+        cycle_node_width = len(f"[{values[cycle_index]}]")
+        length_to_tail = len(nodes) - length_to_cycle_index - cycle_node_width
         cycle += f"{' ' * length_to_tail}{PRINT_ARROW_DOWN}"
 
         back_arrows = f"{PRINT_ARROW_LEFT} " * (length_to_tail // 2 + 1)

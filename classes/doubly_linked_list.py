@@ -40,7 +40,8 @@ class DoublyLinkedList(PackageDoublyLinkedList):
         """
         values = self.get_values(self.size)
         header = f"Doubly Linked List | {self.size} Elements:"
-        nodes = f"[{LINK_ARROW.join(map(str, values))}]"
+        node_values = [f"[{value}]" for value in values]
+        nodes = LINK_ARROW.join(node_values) if node_values else "[]"
 
         return f"\n{PRINT_COLOR}{header}\n{nodes}{RESET}\n"
 

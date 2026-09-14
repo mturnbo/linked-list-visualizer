@@ -107,7 +107,7 @@ def test_str_empty_list(sll):
 
 def test_str_multiple_elements(sll_123):
     result = str(sll_123)
-    assert "Singly Linked List | 3 Elements:\n[1 \u21D2 2 \u21D2 3]" in result
+    assert "Singly Linked List | 3 Elements:\n[1] \u21D2 [2] \u21D2 [3]" in result
 
 
 def test_has_cycle_methods():
