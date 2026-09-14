@@ -8,9 +8,9 @@ import pytest
 
 pytest.importorskip("PySide6")
 
-from PySide6.QtWidgets import QApplication, QGraphicsPathItem
+from PySide6.QtWidgets import QApplication, QGraphicsPathItem, QGraphicsTextItem
 
-from classes.pyside6_theme import NodeVisualState
+from classes.pyside6_theme import NodeVisualState, PySideTheme
 from classes.pyside6_visualizer import LinkedListNodeItem, LinkedListPySideVisualizer
 
 
@@ -108,6 +108,35 @@ def test_pyside6_renderer_draws_curved_cycle_link_and_styled_paths():
     assert cycle_paths
     assert any(path.path().elementCount() > 2 for path in cycle_paths)
     assert all(path.pen().widthF() >= visualizer.theme.arrow_stroke_width for path in path_items)
+    app.processEvents()
+
+
+def test_pyside6_renderer_accepts_theme_without_touching_animation_logic():
+    app = QApplication.instance() or QApplication([])
+    theme = PySideTheme(node_min_width=112.0, node_height=60.0)
+    visualizer = LinkedListPySideVisualizer(
+        "singly",
+        [("append", [1], "append 1")],
+        theme=theme,
+    )
+    frames = visualizer.build_frames(visualizer.operations, visualizer.node_interval)
+
+    visualizer.render_first_frame(frames)
+
+    node_items = [item for item in visualizer.scene.items() if isinstance(item, LinkedListNodeItem)]
+    assert node_items[0].theme is theme
+    assert node_items[0].boundingRect().width() >= 112.0
+    app.processEvents()
+
+
+def test_pyside6_renderer_renders_intentional_empty_state():
+    app = QApplication.instance() or QApplication([])
+    visualizer = LinkedListPySideVisualizer("singly", [])
+
+    visualizer.render_first_frame([])
+
+    messages = [item.toPlainText() for item in visualizer.scene.items() if isinstance(item, QGraphicsTextItem)]
+    assert "No linked list operations yet" in messages
     app.processEvents()
 
 

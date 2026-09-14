@@ -40,6 +40,8 @@ class PySideTheme:
     node_font_size: int = 18
     panel_title_size: int = 24
     panel_text_size: int = 18
+    empty_state_text: Color = (75, 85, 99)
+    empty_state_size: int = 20
     arrow_stroke_width: float = 2.5
     reverse_arrow_stroke_width: float = 1.6
     cycle_arrow_stroke_width: float = 3.0

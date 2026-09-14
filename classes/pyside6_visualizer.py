@@ -16,7 +16,14 @@ from PySide6.QtWidgets import (
     QMainWindow,
 )
 
-from classes.animation import LinkedListAnimation, NodeState, NodeVisual, OperationFrame
+from classes.animation import (
+    LinkedListAnimation,
+    NodeState,
+    NodeValue,
+    NodeVisual,
+    Operation,
+    OperationFrame,
+)
 from classes.pyside6_theme import DEFAULT_PYSIDE_THEME, NodeVisualState, PySideTheme
 from constants import *
 
@@ -66,9 +73,18 @@ class LinkedListNodeItem(QGraphicsItem):
 
 
 class LinkedListPySideVisualizer(LinkedListAnimation):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.theme = DEFAULT_PYSIDE_THEME
+    def __init__(
+        self,
+        ll_type: str,
+        operations: list[Operation],
+        width: int = DEFAULT_WIDTH,
+        height: int = DEFAULT_HEIGHT,
+        node_interval: float = DEFAULT_INTERVAL,
+        arrow_interval: float = DEFAULT_INTERVAL,
+        theme: PySideTheme = DEFAULT_PYSIDE_THEME,
+    ) -> None:
+        super().__init__(ll_type, operations, width, height, node_interval, arrow_interval)
+        self.theme = theme
         self._app: QApplication | None = None
         self._scene: QGraphicsScene | None = None
         self._view: QGraphicsView | None = None
@@ -144,6 +160,9 @@ class LinkedListPySideVisualizer(LinkedListAnimation):
 
         nodes_render, blink_on = self._resolve_nodes_to_render(frame, progress, elapsed)
         visuals = self._resolve_visuals(frame, nodes_render, progress)
+        if not visuals:
+            self._draw_empty_state()
+            return
         radius_map = self._draw_links(frame, visuals, progress)
         self._draw_nodes(frame, visuals, progress, blink_on, radius_map)
         self._draw_cycle_link(frame, visuals, progress, radius_map)
@@ -234,13 +253,21 @@ class LinkedListPySideVisualizer(LinkedListAnimation):
             item.setPos(36, 68 + idx * line_height)
             self.scene.addItem(item)
 
+    def _draw_empty_state(self) -> None:
+        item = self._text_item("No linked list operations yet", self.theme.empty_state_size, self.theme.empty_state_text)
+        bounds = item.boundingRect()
+        x = PANEL_WIDTH + (self.width - PANEL_WIDTH - bounds.width()) / 2
+        y = (self.height - bounds.height()) / 2
+        item.setPos(x, y)
+        self.scene.addItem(item)
+
     def _draw_nodes(
         self,
         frame: OperationFrame,
         visuals: list[NodeVisual],
         progress: float,
         blink_on: bool,
-        radius_map: dict[int, int],
+        radius_map: dict[int, float],
     ) -> None:
         replace_phase = 0.6
         for visual in visuals:
@@ -276,13 +303,15 @@ class LinkedListPySideVisualizer(LinkedListAnimation):
         frame: OperationFrame,
         visuals: list[NodeVisual],
         progress: float,
-    ) -> dict[int, int]:
-        radius_map = {}
+    ) -> dict[int, float]:
+        radius_map: dict[int, float] = {}
+        half_heights: dict[int, float] = {}
         for visual in visuals:
             scale = 1.0
             if frame.op_type == "add" and visual.node_id == frame.added_id:
                 scale = 0.5 + 0.5 * progress
-            radius_map[visual.node_id] = int((self.theme.node_height / 2) * scale)
+            radius_map[visual.node_id] = self._node_half_width(visual.value) * scale
+            half_heights[visual.node_id] = (self.theme.node_height / 2) * scale
 
         bidirectional = self.ll_type == "doubly"
         for index in range(len(visuals) - 1):
@@ -291,8 +320,14 @@ class LinkedListPySideVisualizer(LinkedListAnimation):
             link_progress = self._link_progress(frame, progress, current.node_id, next_visual.node_id)
 
             if current.row != next_visual.row:
-                start = (current.position[0], current.position[1] + radius_map.get(current.node_id, 42))
-                end = (next_visual.position[0], next_visual.position[1] - radius_map.get(next_visual.node_id, 42))
+                start = (
+                    float(current.position[0]),
+                    current.position[1] + half_heights.get(current.node_id, 42.0),
+                )
+                end = (
+                    float(next_visual.position[0]),
+                    next_visual.position[1] - half_heights.get(next_visual.node_id, 42.0),
+                )
                 turn_y = current.position[1] + (next_visual.position[1] - current.position[1]) / 2
                 path = [start, (start[0], turn_y), (end[0], turn_y), end]
                 self._draw_polyline_arrow(path, self.theme.arrow, link_progress, self.theme.arrow_stroke_width)
@@ -304,8 +339,11 @@ class LinkedListPySideVisualizer(LinkedListAnimation):
                         self.theme.reverse_arrow_stroke_width,
                     )
             else:
-                start = (current.position[0] + radius_map.get(current.node_id, 42), current.position[1])
-                end = (next_visual.position[0] - radius_map.get(next_visual.node_id, 42), next_visual.position[1])
+                start = (current.position[0] + radius_map.get(current.node_id, 42.0), float(current.position[1]))
+                end = (
+                    next_visual.position[0] - radius_map.get(next_visual.node_id, 42.0),
+                    float(next_visual.position[1]),
+                )
                 self._draw_arrow(start, end, self.theme.arrow, link_progress, self.theme.arrow_stroke_width)
                 if bidirectional:
                     self._draw_arrow(
@@ -323,7 +361,7 @@ class LinkedListPySideVisualizer(LinkedListAnimation):
         frame: OperationFrame,
         visuals: list[NodeVisual],
         progress: float,
-        radius_map: dict[int, int],
+        radius_map: dict[int, float],
     ) -> None:
         if not frame.cycle_link:
             return
@@ -478,6 +516,10 @@ class LinkedListPySideVisualizer(LinkedListAnimation):
         from PySide6.QtCore import QPointF
 
         return QPointF(float(point[0]), float(point[1]))
+
+    def _node_half_width(self, value: NodeValue) -> float:
+        item = LinkedListNodeItem(value, NodeVisualState.NORMAL, self.theme)
+        return item.boundingRect().width() / 2
 
 
 def _color(rgb) -> QColor:
