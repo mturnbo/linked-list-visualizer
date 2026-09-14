@@ -83,9 +83,9 @@ def parse_operations(path: str) -> list[tuple[str, list[int | float | str | bool
 
 def main() -> None:
     """Run the linked list visualizer CLI."""
-    parser = argparse.ArgumentParser(description="Visualize a linked list with pygame.")
+    parser = argparse.ArgumentParser(description="Visualize a linked list.")
     parser.add_argument("ll_type", choices=["singly", "doubly"], default = "singly", help="Linked List type.  Singly or Doubly.")
-    parser.add_argument("display", choices=["print", "animate"], help="Print to command line or visualize with pygame.")
+    parser.add_argument("display", choices=["print", "animate", "gui"], help="Print, visualize with pygame, or visualize with PySide6.")
     parser.add_argument("--values", type=str, default="", help="Comma-separated list of node values.")
     parser.add_argument("--ops-file", type=str, default="", help="Path to operations text file.")
     parser.add_argument("--node-interval", type=float, help="Seconds per operation.")
@@ -111,6 +111,15 @@ def main() -> None:
             from classes.visualizer import LinkedListVisualizer
 
             llv = LinkedListVisualizer(
+                ll_type=args.ll_type,
+                operations=operations
+            )
+            llv.configure(vars(args))
+            llv.display()
+        elif args.display == "gui":
+            from classes.pyside6_visualizer import LinkedListPySideVisualizer
+
+            llv = LinkedListPySideVisualizer(
                 ll_type=args.ll_type,
                 operations=operations
             )
