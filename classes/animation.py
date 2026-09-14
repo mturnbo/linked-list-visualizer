@@ -60,6 +60,14 @@ class LinkedListAnimation:
     def _sort_key(value):
         return (str(type(value)), str(value))
 
+    @staticmethod
+    def _index_arg(args: list[NodeValue], position: int = 0) -> int:
+        return int(args[position])
+
+    @staticmethod
+    def _value_arg(args: list[NodeValue], position: int = 0) -> NodeValue:
+        return args[position]
+
     def configure(self, params: dict[str, Any]):
         if params.get("node_interval"):
             self.node_interval = params["node_interval"]
@@ -108,7 +116,7 @@ class LinkedListAnimation:
         interval: float,
     ) -> list[OperationFrame]:
         linked_list = LinkedList.create(self.ll_type)
-        nodes = []
+        nodes: list[NodeState] = []
         next_id = len(nodes)
         frames: list[OperationFrame] = []
         current_new_id = None
@@ -119,7 +127,7 @@ class LinkedListAnimation:
             nodes_before = [NodeState(node.node_id, node.value) for node in nodes]
 
             if command == "append":
-                value = args[0]
+                value = self._value_arg(args)
                 linked_list.append(value)
                 insert_index = size_before
                 new_node = NodeState(next_id, value)
@@ -140,7 +148,7 @@ class LinkedListAnimation:
                 )
                 current_new_id = new_node.node_id
             elif command == "prepend":
-                value = args[0]
+                value = self._value_arg(args)
                 linked_list.prepend(value)
                 insert_index = 0
                 new_node = NodeState(next_id, value)
@@ -161,7 +169,8 @@ class LinkedListAnimation:
                 )
                 current_new_id = new_node.node_id
             elif command == "insert":
-                index, value = args
+                index = self._index_arg(args)
+                value = self._value_arg(args, 1)
                 if index <= 0:
                     insert_index = 0
                 elif index >= size_before:
@@ -189,7 +198,7 @@ class LinkedListAnimation:
             elif command == "remove":
                 if size_before == 0:
                     continue
-                index = args[0]
+                index = self._index_arg(args)
                 if index <= 0:
                     remove_index = 0
                 elif index >= size_before - 1:
@@ -216,7 +225,8 @@ class LinkedListAnimation:
             elif command == "replace":
                 if size_before == 0:
                     continue
-                index, value = args
+                index = self._index_arg(args)
+                value = self._value_arg(args, 1)
                 if index <= 0:
                     replace_index = 0
                 elif index >= size_before - 1:
@@ -256,7 +266,7 @@ class LinkedListAnimation:
             elif command == "sort":
                 if size_before == 0:
                     continue
-                sort_method = args[0] if args else 1
+                sort_method = self._index_arg(args) if args else 1
                 if linked_list.sort(method=sort_method):
                     nodes = sorted(nodes, key=lambda node: self._sort_key(node.value))
                     current_cycle = None
@@ -275,7 +285,7 @@ class LinkedListAnimation:
                 if self.ll_type == "singly":
                     if size_before == 0:
                         continue
-                    start_index = args[0]
+                    start_index = self._index_arg(args)
                     linked_list.create_cycle(start_index)
                     start_node_id = None
                     end_node_id = None

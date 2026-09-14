@@ -1,11 +1,13 @@
 import argparse
 from pathlib import Path
+from typing import cast
 
+from classes.animation import NodeValue, Operation
 from classes.linked_list import LinkedList
 from constants import DEFAULT_VALUES
 
 
-def parse_values(raw_values: str) -> list[int | float | str | bool]:
+def parse_values(raw_values: str) -> list[NodeValue]:
     """Parse raw comma-separated CLI values.
 
     Args:
@@ -25,7 +27,7 @@ def parse_values(raw_values: str) -> list[int | float | str | bool]:
         raise ValueError("Values must be a comma-separated list of int | float | str | bool") from exc
 
 
-def parse_operations(path: str) -> list[tuple[str, list[int | float | str | bool], str]]:
+def parse_operations(path: str) -> list[Operation]:
     """Parse visualizer operations from a text file.
 
     Args:
@@ -37,7 +39,7 @@ def parse_operations(path: str) -> list[tuple[str, list[int | float | str | bool
     Raises:
         ValueError: If an operation has invalid syntax.
     """
-    operations = []
+    operations: list[Operation] = []
     if not path:
         return operations
     with Path(path).open(encoding="utf-8") as handle:
@@ -97,34 +99,35 @@ def main() -> None:
     try:
         if not args.values and not args.ops_file:
             raise ValueError("Must specify either values or operations file")
-        values = operations = []
+        values: list[NodeValue] = []
+        operations: list[Operation] = []
         if args.values and not args.ops_file:
             values = parse_values(args.values)
             operations = [("append", [value], f"append {value}") for value in values]
         elif args.ops_file:
             operations = parse_operations(args.ops_file)
         else:
-            values = DEFAULT_VALUES
+            values = cast(list[NodeValue], DEFAULT_VALUES.copy())
             operations = [("append", [value], f"append {value}") for value in values]
 
         if args.display == "animate":
             from classes.visualizer import LinkedListVisualizer
 
-            llv = LinkedListVisualizer(
+            pygame_visualizer = LinkedListVisualizer(
                 ll_type=args.ll_type,
                 operations=operations
             )
-            llv.configure(vars(args))
-            llv.display()
+            pygame_visualizer.configure(vars(args))
+            pygame_visualizer.display()
         elif args.display == "gui":
             from classes.pyside6_visualizer import LinkedListPySideVisualizer
 
-            llv = LinkedListPySideVisualizer(
+            gui_visualizer = LinkedListPySideVisualizer(
                 ll_type=args.ll_type,
                 operations=operations
             )
-            llv.configure(vars(args))
-            llv.display()
+            gui_visualizer.configure(vars(args))
+            gui_visualizer.display()
         else:
             if values:
                 ll = LinkedList.build_from_values(args.ll_type, values)

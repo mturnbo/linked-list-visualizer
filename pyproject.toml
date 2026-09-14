@@ -14,3 +14,7 @@ dev = [
     "pytest",
     "ruff",
 ]
+
+[[tool.mypy.overrides]]
+module = ["linked_list", "linked_list.*"]
+ignore_missing_imports = true
