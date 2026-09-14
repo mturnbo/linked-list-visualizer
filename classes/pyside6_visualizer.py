@@ -1,0 +1,391 @@
+import math
+import sys
+
+from PySide6.QtCore import QTimer
+from PySide6.QtGui import QColor, QFont, QPainterPath, QPen, QBrush, QPolygonF
+from PySide6.QtWidgets import (
+    QApplication,
+    QGraphicsEllipseItem,
+    QGraphicsPathItem,
+    QGraphicsPolygonItem,
+    QGraphicsRectItem,
+    QGraphicsScene,
+    QGraphicsTextItem,
+    QGraphicsView,
+    QMainWindow,
+)
+
+from classes.animation import LinkedListAnimation, NodeState, NodeVisual, OperationFrame
+from constants import *
+
+
+class LinkedListPySideVisualizer(LinkedListAnimation):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.scene = QGraphicsScene()
+        self.view = QGraphicsView(self.scene)
+
+    def display(self):
+        app = QApplication.instance() or QApplication(sys.argv)
+        window = QMainWindow()
+        window.setWindowTitle("Linked List Visualization")
+        window.resize(self.width, self.height)
+        window.setCentralWidget(self.view)
+
+        frames = self.build_frames(self.operations, self.node_interval)
+        start_time = 0.0
+
+        def tick():
+            nonlocal start_time
+            if start_time == 0.0:
+                start_time = self.view.window().property("start_time")
+            elapsed = self.view.window().property("elapsed_seconds")
+            self.view.window().setProperty("elapsed_seconds", elapsed + 1 / 60)
+            frame, progress, frame_index = self.get_frame_at_time(frames, elapsed)
+            self.render_frame(frames, frame, progress, frame_index, elapsed)
+
+        window.setProperty("start_time", 0.0)
+        window.setProperty("elapsed_seconds", 0.0)
+        self.render_first_frame(frames)
+
+        timer = QTimer(window)
+        timer.timeout.connect(tick)
+        timer.start(16)
+
+        window.show()
+        app.exec()
+
+    def render_first_frame(self, frames: list[OperationFrame]) -> None:
+        frame, progress, frame_index = self.get_frame_at_time(frames, 0.0)
+        self.render_frame(frames, frame, progress, frame_index, 0.0)
+
+    def render_frame(
+        self,
+        frames: list[OperationFrame],
+        frame: OperationFrame,
+        progress: float,
+        frame_index: int,
+        elapsed: float,
+    ) -> None:
+        self.scene.clear()
+        self.scene.setSceneRect(0, 0, self.width, self.height)
+        self._draw_background()
+        self._draw_operations_panel(frames, frame_index)
+
+        nodes_render, blink_on = self._resolve_nodes_to_render(frame, progress, elapsed)
+        visuals = self._resolve_visuals(frame, nodes_render, progress)
+        radius_map = self._draw_links(frame, visuals, progress)
+        self._draw_nodes(frame, visuals, progress, blink_on, radius_map)
+        self._draw_cycle_link(frame, visuals, progress, radius_map)
+
+    def _resolve_nodes_to_render(
+        self,
+        frame: OperationFrame,
+        progress: float,
+        elapsed: float,
+    ) -> tuple[list[NodeState], bool]:
+        remove_phase = 0.8
+        replace_phase = 0.6
+
+        if frame.op_type == "remove" and progress < remove_phase:
+            return frame.nodes_before, int((elapsed / 0.2)) % 2 == 0
+        if frame.op_type == "remove":
+            return frame.nodes_after, False
+        if frame.op_type == "replace":
+            return frame.nodes_after, int((elapsed / 0.2)) % 2 == 0
+        if frame.op_type == "sort":
+            sort_remove_phase = 0.7
+            if progress < sort_remove_phase:
+                remove_progress = progress / max(sort_remove_phase, 0.01)
+                total_nodes = len(frame.nodes_before)
+                removed_count = min(total_nodes, int(remove_progress * total_nodes))
+                return frame.nodes_before[: total_nodes - removed_count], False
+            redraw_progress = (progress - sort_remove_phase) / max(1 - sort_remove_phase, 0.01)
+            total_nodes = len(frame.nodes_after)
+            visible_count = min(total_nodes, int(redraw_progress * total_nodes))
+            return frame.nodes_after[:visible_count], False
+        return frame.nodes_after, False
+
+    def _resolve_visuals(
+        self,
+        frame: OperationFrame,
+        nodes_render: list[NodeState],
+        progress: float,
+    ) -> list[NodeVisual]:
+        if frame.op_type != "reverse":
+            return self.layout_nodes(nodes_render, self.width, self.height)
+
+        visuals_before = self.layout_nodes(frame.nodes_before, self.width, self.height)
+        visuals_after = self.layout_nodes(frame.nodes_after, self.width, self.height)
+        before_by_id = {visual.node_id: visual for visual in visuals_before}
+        after_by_id = {visual.node_id: visual for visual in visuals_after}
+        arrow_out_end = 0.2
+        arrow_in_start = 0.8
+        if progress <= arrow_out_end:
+            move_t = 0.0
+        elif progress >= arrow_in_start:
+            move_t = 1.0
+        else:
+            move_t = (progress - arrow_out_end) / (arrow_in_start - arrow_out_end)
+
+        visuals = []
+        for node in frame.nodes_after:
+            before_visual = before_by_id.get(node.node_id)
+            after_visual = after_by_id.get(node.node_id)
+            if before_visual and after_visual:
+                start_x, start_y = before_visual.position
+                end_x, end_y = after_visual.position
+                x = int(start_x + (end_x - start_x) * move_t)
+                y = int(start_y + (end_y - start_y) * move_t)
+                visuals.append(NodeVisual(node.node_id, node.value, (x, y), after_visual.row, after_visual.col))
+            elif after_visual:
+                visuals.append(after_visual)
+        return visuals
+
+    def _draw_background(self) -> None:
+        self.scene.setBackgroundBrush(QBrush(self._color(DEFAULT_BG_COLOR)))
+
+    def _draw_operations_panel(self, frames: list[OperationFrame], frame_index: int) -> None:
+        panel = QGraphicsRectItem(20, 20, PANEL_WIDTH - 40, self.height - 40)
+        panel.setBrush(QBrush(self._color(PANEL_BG)))
+        panel.setPen(QPen(self._color(PANEL_BORDER), 2))
+        self.scene.addItem(panel)
+
+        title = self._text_item("Operations", 24, PANEL_TEXT)
+        title.setPos(36, 34)
+        self.scene.addItem(title)
+
+        line_height = 22
+        max_lines = max(1, (self.height - 100) // line_height)
+        end_index = max(0, frame_index + 1)
+        start_index = max(0, end_index - max_lines)
+        for idx, op_frame in enumerate(frames[start_index:end_index]):
+            op_index = start_index + idx
+            color = PANEL_HIGHLIGHT if op_index == frame_index else PANEL_TEXT
+            item = self._text_item(op_frame.label, 18, color)
+            item.setPos(36, 68 + idx * line_height)
+            self.scene.addItem(item)
+
+    def _draw_nodes(
+        self,
+        frame: OperationFrame,
+        visuals: list[NodeVisual],
+        progress: float,
+        blink_on: bool,
+        radius_map: dict[int, int],
+    ) -> None:
+        replace_phase = 0.6
+        for visual in visuals:
+            radius = radius_map[visual.node_id]
+            x, y = visual.position
+            color = NODE_COLOR
+            if frame.op_type == "add":
+                if visual.node_id == frame.added_id:
+                    color = NODE_NEW_COLOR
+                elif frame.fade_id is not None and visual.node_id == frame.fade_id:
+                    color = self.lerp_color(NODE_NEW_COLOR, NODE_COLOR, progress)
+            elif frame.current_new_id is not None and visual.node_id == frame.current_new_id:
+                color = NODE_NEW_COLOR
+            if frame.op_type == "remove" and blink_on and visual.node_id == frame.removed_id:
+                color = NODE_REMOVE_COLOR
+            if frame.op_type == "replace" and visual.node_id == frame.replaced_id:
+                if progress < replace_phase:
+                    if blink_on:
+                        color = NODE_REPLACE_COLOR
+                else:
+                    fade_progress = (progress - replace_phase) / max(1 - replace_phase, 0.01)
+                    color = self.lerp_color(NODE_REPLACE_COLOR, NODE_COLOR, fade_progress)
+
+            node = QGraphicsEllipseItem(x - radius, y - radius, radius * 2, radius * 2)
+            node.setBrush(QBrush(self._color(color)))
+            node.setPen(QPen(self._color(NODE_EDGE_COLOR), 3))
+            self.scene.addItem(node)
+
+            label = self._text_item(str(visual.value), 24, TEXT_COLOR)
+            bounds = label.boundingRect()
+            label.setPos(x - bounds.width() / 2, y - bounds.height() / 2)
+            self.scene.addItem(label)
+
+    def _draw_links(
+        self,
+        frame: OperationFrame,
+        visuals: list[NodeVisual],
+        progress: float,
+    ) -> dict[int, int]:
+        radius_map = {}
+        for visual in visuals:
+            scale = 1.0
+            if frame.op_type == "add" and visual.node_id == frame.added_id:
+                scale = 0.5 + 0.5 * progress
+            radius_map[visual.node_id] = int(32 * scale)
+
+        bidirectional = self.ll_type == "doubly"
+        for index in range(len(visuals) - 1):
+            current = visuals[index]
+            next_visual = visuals[index + 1]
+            link_progress = self._link_progress(frame, progress, current.node_id, next_visual.node_id)
+
+            if current.row != next_visual.row:
+                start = (current.position[0], current.position[1] + radius_map.get(current.node_id, 42))
+                end = (next_visual.position[0], next_visual.position[1] - radius_map.get(next_visual.node_id, 42))
+                turn_y = current.position[1] + (next_visual.position[1] - current.position[1]) / 2
+                path = [start, (start[0], turn_y), (end[0], turn_y), end]
+                self._draw_polyline_arrow(path, ARROW_COLOR, link_progress, 3)
+                if bidirectional:
+                    self._draw_polyline_arrow(list(reversed(path)), ARROW_COLOR, link_progress, 3)
+            else:
+                start = (current.position[0] + radius_map.get(current.node_id, 42), current.position[1])
+                end = (next_visual.position[0] - radius_map.get(next_visual.node_id, 42), next_visual.position[1])
+                self._draw_arrow(start, end, ARROW_COLOR, link_progress, 3)
+                if bidirectional:
+                    self._draw_arrow(end, start, ARROW_COLOR, link_progress, 3)
+
+        return radius_map
+
+    def _draw_cycle_link(
+        self,
+        frame: OperationFrame,
+        visuals: list[NodeVisual],
+        progress: float,
+        radius_map: dict[int, int],
+    ) -> None:
+        if not frame.cycle_link:
+            return
+        visuals_by_id = {visual.node_id: visual for visual in visuals}
+        cycle_end_id, cycle_start_id = frame.cycle_link
+        cycle_end = visuals_by_id.get(cycle_end_id)
+        cycle_start = visuals_by_id.get(cycle_start_id)
+        if not cycle_end or not cycle_start:
+            return
+
+        start_radius = radius_map.get(cycle_end.node_id, 32)
+        end_radius = radius_map.get(cycle_start.node_id, 32)
+        start_point = (cycle_end.position[0] + start_radius, cycle_end.position[1])
+        end_point = (cycle_start.position[0] - end_radius, cycle_start.position[1])
+        min_y = min(cycle_end.position[1], cycle_start.position[1])
+        max_y = max(cycle_end.position[1], cycle_start.position[1])
+        mid_y = min_y - 70
+        if mid_y < 30:
+            mid_y = max_y + 70
+        path = [
+            start_point,
+            (start_point[0] + 30, start_point[1]),
+            (start_point[0] + 30, mid_y),
+            (end_point[0] - 30, mid_y),
+            (end_point[0] - 30, end_point[1]),
+            end_point,
+        ]
+        self._draw_polyline_arrow(path, CYCLE_COLOR, self._cycle_progress(frame, progress), 3)
+
+    def _link_progress(self, frame: OperationFrame, progress: float, current_id: int, next_id: int) -> float:
+        op_elapsed = progress * frame.duration
+        if frame.op_type == "add" and frame.added_id in {current_id, next_id}:
+            return self.clamp(op_elapsed / max(self.arrow_interval, 0.01), 0.0, 1.0)
+        if frame.op_type == "reverse":
+            return self._reverse_arrow_progress(progress)
+        return 1.0
+
+    def _cycle_progress(self, frame: OperationFrame, progress: float) -> float:
+        op_elapsed = progress * frame.duration
+        if frame.op_type == "cycle":
+            return self.clamp(op_elapsed / max(self.arrow_interval, 0.01), 0.0, 1.0)
+        if frame.op_type == "reverse":
+            return self._reverse_arrow_progress(progress)
+        return 1.0
+
+    def _reverse_arrow_progress(self, progress: float) -> float:
+        arrow_out_end = 0.2
+        arrow_in_start = 0.8
+        if progress <= arrow_out_end:
+            return 1.0 - (progress / max(arrow_out_end, 0.01))
+        if progress >= arrow_in_start:
+            return self.clamp((progress - arrow_in_start) / max(1 - arrow_in_start, 0.01), 0.0, 1.0)
+        return 0.0
+
+    def _draw_arrow(self, start, end, color, progress=1.0, width=2, arrow_size=12) -> None:
+        progress = self.clamp(progress, 0.0, 1.0)
+        if progress <= 0:
+            return
+        end_point = (
+            start[0] + (end[0] - start[0]) * progress,
+            start[1] + (end[1] - start[1]) * progress,
+        )
+        path = QPainterPath()
+        path.moveTo(*start)
+        path.lineTo(*end_point)
+        item = QGraphicsPathItem(path)
+        item.setPen(QPen(self._color(color), width))
+        self.scene.addItem(item)
+        if progress >= 0.98:
+            self._draw_arrow_head(start, end, color, arrow_size)
+
+    def _draw_polyline_arrow(self, points, color, progress=1.0, width=2, arrow_size=12) -> None:
+        if len(points) < 2:
+            return
+        segments = []
+        total_length = 0.0
+        for index in range(len(points) - 1):
+            start = points[index]
+            end = points[index + 1]
+            length = math.hypot(end[0] - start[0], end[1] - start[1])
+            segments.append((start, end, length))
+            total_length += length
+        if total_length == 0:
+            return
+
+        remaining = total_length * self.clamp(progress, 0.0, 1.0)
+        path = QPainterPath()
+        path.moveTo(*points[0])
+        for start, end, length in segments:
+            if remaining <= 0:
+                break
+            if remaining >= length:
+                path.lineTo(*end)
+                remaining -= length
+            else:
+                ratio = remaining / length
+                current_end = (
+                    start[0] + (end[0] - start[0]) * ratio,
+                    start[1] + (end[1] - start[1]) * ratio,
+                )
+                path.lineTo(*current_end)
+                break
+        item = QGraphicsPathItem(path)
+        item.setPen(QPen(self._color(color), width))
+        self.scene.addItem(item)
+        if self.clamp(progress, 0.0, 1.0) >= 0.98:
+            self._draw_arrow_head(segments[-1][0], segments[-1][1], color, arrow_size)
+
+    def _draw_arrow_head(self, start, end, color, arrow_size=12) -> None:
+        direction = (start[0] - end[0], start[1] - end[1])
+        length = math.hypot(direction[0], direction[1])
+        if length == 0:
+            return
+        unit = (direction[0] / length, direction[1] / length)
+        perpendicular = (-unit[1], unit[0])
+        left = (
+            end[0] + unit[0] * arrow_size + perpendicular[0] * (arrow_size * 0.6),
+            end[1] + unit[1] * arrow_size + perpendicular[1] * (arrow_size * 0.6),
+        )
+        right = (
+            end[0] + unit[0] * arrow_size - perpendicular[0] * (arrow_size * 0.6),
+            end[1] + unit[1] * arrow_size - perpendicular[1] * (arrow_size * 0.6),
+        )
+        arrow = QGraphicsPolygonItem(QPolygonF([self._point(end), self._point(left), self._point(right)]))
+        arrow.setBrush(QBrush(self._color(color)))
+        arrow.setPen(QPen(self._color(color), 1))
+        self.scene.addItem(arrow)
+
+    def _text_item(self, text: str, size: int, color) -> QGraphicsTextItem:
+        item = QGraphicsTextItem(text)
+        item.setFont(QFont("Avenir", size))
+        item.setDefaultTextColor(self._color(color))
+        return item
+
+    def _color(self, rgb) -> QColor:
+        return QColor(int(rgb[0]), int(rgb[1]), int(rgb[2]))
+
+    def _point(self, point):
+        from PySide6.QtCore import QPointF
+
+        return QPointF(float(point[0]), float(point[1]))
