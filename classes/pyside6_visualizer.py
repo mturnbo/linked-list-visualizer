@@ -2,11 +2,11 @@ import math
 import sys
 from typing import cast
 
-from PySide6.QtCore import QTimer
-from PySide6.QtGui import QBrush, QColor, QFont, QPainterPath, QPen, QPolygonF
+from PySide6.QtCore import QPointF, QRectF, Qt, QTimer
+from PySide6.QtGui import QBrush, QColor, QFont, QPainter, QPainterPath, QPen, QPolygonF
 from PySide6.QtWidgets import (
     QApplication,
-    QGraphicsEllipseItem,
+    QGraphicsItem,
     QGraphicsPathItem,
     QGraphicsPolygonItem,
     QGraphicsRectItem,
@@ -16,13 +16,110 @@ from PySide6.QtWidgets import (
     QMainWindow,
 )
 
-from classes.animation import LinkedListAnimation, NodeState, NodeVisual, OperationFrame
+from classes.animation import (
+    LinkedListAnimation,
+    NodeState,
+    NodeValue,
+    NodeVisual,
+    Operation,
+    OperationFrame,
+)
+from classes.pyside6_theme import DEFAULT_PYSIDE_THEME, NodeVisualState, PySideTheme
 from constants import *
 
 
+class LinkedListNodeItem(QGraphicsItem):
+    def __init__(
+        self,
+        value: object,
+        visual_state: NodeVisualState,
+        theme: PySideTheme,
+        node_kind: str = "singly",
+        parent: QGraphicsItem | None = None,
+    ) -> None:
+        super().__init__(parent)
+        self.value_text = str(value)
+        self.visual_state = visual_state
+        self.theme = theme
+        self.node_kind = node_kind
+        self.pointer_cell_count = 2 if node_kind == "doubly" else 1
+        self.pointer_cell_width = theme.pointer_cell_width
+        self._font = QFont(theme.node_font_family, theme.node_font_size)
+        self._body_rect = self._measure_body()
+        self.left_pointer_rect, self.value_rect, self.right_pointer_rect = self._measure_compartments()
+        self.setData(0, "node")
+        self.setData(1, visual_state.value)
+        self.setData(2, node_kind)
+
+    def boundingRect(self) -> QRectF:
+        return self._body_rect.adjusted(
+            -self.theme.node_stroke_width,
+            -self.theme.node_stroke_width,
+            self.theme.node_stroke_width,
+            self.theme.node_stroke_width,
+        )
+
+    def paint(self, painter: QPainter, option, widget=None) -> None:
+        style = self.theme.node_style(self.visual_state)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+        painter.setBrush(QBrush(_color(style.fill)))
+        painter.setPen(QPen(_color(style.stroke), style.stroke_width))
+        painter.drawRoundedRect(self._body_rect, self.theme.node_radius, self.theme.node_radius)
+        self._draw_compartment_dividers(painter, style.stroke, style.stroke_width)
+        painter.setFont(self._font)
+        painter.setPen(QPen(_color(style.text), 1))
+        painter.drawText(self.value_rect, Qt.AlignmentFlag.AlignCenter, self.value_text)
+
+    def outgoing_anchor(self) -> QPointF:
+        return self.right_pointer_rect.center()
+
+    def incoming_anchor(self) -> QPointF:
+        if self.left_pointer_rect is not None:
+            return self.left_pointer_rect.center()
+        return QPointF(self._body_rect.left(), self._body_rect.center().y())
+
+    def _measure_body(self) -> QRectF:
+        from PySide6.QtGui import QFontMetricsF
+
+        metrics = QFontMetricsF(self._font)
+        text_width = metrics.horizontalAdvance(self.value_text)
+        value_width = max(self.theme.node_min_width, text_width + self.theme.node_padding_x * 2)
+        width = value_width + self.pointer_cell_width * self.pointer_cell_count
+        return QRectF(-width / 2, -self.theme.node_height / 2, width, self.theme.node_height)
+
+    def _measure_compartments(self) -> tuple[QRectF | None, QRectF, QRectF]:
+        body = self._body_rect
+        left = None
+        value_x = body.left()
+        if self.node_kind == "doubly":
+            left = QRectF(body.left(), body.top(), self.pointer_cell_width, body.height())
+            value_x += self.pointer_cell_width
+        value_width = body.width() - self.pointer_cell_width * self.pointer_cell_count
+        value = QRectF(value_x, body.top(), value_width, body.height())
+        right = QRectF(value.right(), body.top(), self.pointer_cell_width, body.height())
+        return left, value, right
+
+    def _draw_compartment_dividers(self, painter: QPainter, stroke, stroke_width: float) -> None:
+        painter.setPen(QPen(_color(stroke), max(1.0, stroke_width - 0.5)))
+        if self.left_pointer_rect is not None:
+            x = self.left_pointer_rect.right()
+            painter.drawLine(QPointF(x, self._body_rect.top()), QPointF(x, self._body_rect.bottom()))
+        x = self.value_rect.right()
+        painter.drawLine(QPointF(x, self._body_rect.top()), QPointF(x, self._body_rect.bottom()))
+
 class LinkedListPySideVisualizer(LinkedListAnimation):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(
+        self,
+        ll_type: str,
+        operations: list[Operation],
+        width: int = DEFAULT_WIDTH,
+        height: int = DEFAULT_HEIGHT,
+        node_interval: float = DEFAULT_INTERVAL,
+        arrow_interval: float = DEFAULT_INTERVAL,
+        theme: PySideTheme = DEFAULT_PYSIDE_THEME,
+    ) -> None:
+        super().__init__(ll_type, operations, width, height, node_interval, arrow_interval)
+        self.theme = theme
         self._app: QApplication | None = None
         self._scene: QGraphicsScene | None = None
         self._view: QGraphicsView | None = None
@@ -98,9 +195,12 @@ class LinkedListPySideVisualizer(LinkedListAnimation):
 
         nodes_render, blink_on = self._resolve_nodes_to_render(frame, progress, elapsed)
         visuals = self._resolve_visuals(frame, nodes_render, progress)
-        radius_map = self._draw_links(frame, visuals, progress)
-        self._draw_nodes(frame, visuals, progress, blink_on, radius_map)
-        self._draw_cycle_link(frame, visuals, progress, radius_map)
+        if not visuals:
+            self._draw_empty_state()
+            return
+        self._draw_nodes(frame, visuals, progress, blink_on)
+        anchor_map = self._draw_links(frame, visuals, progress)
+        self._draw_cycle_link(frame, visuals, progress, anchor_map)
 
     def _resolve_nodes_to_render(
         self,
@@ -165,15 +265,15 @@ class LinkedListPySideVisualizer(LinkedListAnimation):
         return visuals
 
     def _draw_background(self) -> None:
-        self.scene.setBackgroundBrush(QBrush(self._color(DEFAULT_BG_COLOR)))
+        self.scene.setBackgroundBrush(QBrush(self._color(self.theme.canvas)))
 
     def _draw_operations_panel(self, frames: list[OperationFrame], frame_index: int) -> None:
         panel = QGraphicsRectItem(20, 20, PANEL_WIDTH - 40, self.height - 40)
-        panel.setBrush(QBrush(self._color(PANEL_BG)))
-        panel.setPen(QPen(self._color(PANEL_BORDER), 2))
+        panel.setBrush(QBrush(self._color(self.theme.panel_fill)))
+        panel.setPen(QPen(self._color(self.theme.panel_stroke), 2))
         self.scene.addItem(panel)
 
-        title = self._text_item("Operations", 24, PANEL_TEXT)
+        title = self._text_item("Operations", self.theme.panel_title_size, self.theme.panel_text)
         title.setPos(36, 34)
         self.scene.addItem(title)
 
@@ -183,10 +283,18 @@ class LinkedListPySideVisualizer(LinkedListAnimation):
         start_index = max(0, end_index - max_lines)
         for idx, op_frame in enumerate(frames[start_index:end_index]):
             op_index = start_index + idx
-            color = PANEL_HIGHLIGHT if op_index == frame_index else PANEL_TEXT
-            item = self._text_item(op_frame.label, 18, color)
+            color = self.theme.panel_current_text if op_index == frame_index else self.theme.panel_text
+            item = self._text_item(op_frame.label, self.theme.panel_text_size, color)
             item.setPos(36, 68 + idx * line_height)
             self.scene.addItem(item)
+
+    def _draw_empty_state(self) -> None:
+        item = self._text_item("No linked list operations yet", self.theme.empty_state_size, self.theme.empty_state_text)
+        bounds = item.boundingRect()
+        x = PANEL_WIDTH + (self.width - PANEL_WIDTH - bounds.width()) / 2
+        y = (self.height - bounds.height()) / 2
+        item.setPos(x, y)
+        self.scene.addItem(item)
 
     def _draw_nodes(
         self,
@@ -194,52 +302,53 @@ class LinkedListPySideVisualizer(LinkedListAnimation):
         visuals: list[NodeVisual],
         progress: float,
         blink_on: bool,
-        radius_map: dict[int, int],
     ) -> None:
         replace_phase = 0.6
         for visual in visuals:
-            radius = radius_map[visual.node_id]
             x, y = visual.position
-            color = NODE_COLOR
-            if frame.op_type == "add":
-                if visual.node_id == frame.added_id:
-                    color = NODE_NEW_COLOR
-                elif frame.fade_id is not None and visual.node_id == frame.fade_id:
-                    color = self.lerp_color(NODE_NEW_COLOR, NODE_COLOR, progress)
-            elif frame.current_new_id is not None and visual.node_id == frame.current_new_id:
-                color = NODE_NEW_COLOR
-            if frame.op_type == "remove" and blink_on and visual.node_id == frame.removed_id:
-                color = NODE_REMOVE_COLOR
-            if frame.op_type == "replace" and visual.node_id == frame.replaced_id:
-                if progress < replace_phase:
-                    if blink_on:
-                        color = NODE_REPLACE_COLOR
-                else:
-                    fade_progress = (progress - replace_phase) / max(1 - replace_phase, 0.01)
-                    color = self.lerp_color(NODE_REPLACE_COLOR, NODE_COLOR, fade_progress)
-
-            node = QGraphicsEllipseItem(x - radius, y - radius, radius * 2, radius * 2)
-            node.setBrush(QBrush(self._color(color)))
-            node.setPen(QPen(self._color(NODE_EDGE_COLOR), 3))
+            state = self.node_state_for(frame, visual, blink_on)
+            if frame.op_type == "replace" and visual.node_id == frame.replaced_id and progress >= replace_phase:
+                state = NodeVisualState.NORMAL
+            node = LinkedListNodeItem(visual.value, state, self.theme, node_kind=self.ll_type)
+            node.setPos(x, y)
             self.scene.addItem(node)
 
-            label = self._text_item(str(visual.value), 24, TEXT_COLOR)
-            bounds = label.boundingRect()
-            label.setPos(x - bounds.width() / 2, y - bounds.height() / 2)
-            self.scene.addItem(label)
+    def node_state_for(
+        self,
+        frame: OperationFrame,
+        visual: NodeState | NodeVisual,
+        blink_on: bool,
+    ) -> NodeVisualState:
+        cycle_ids = set(frame.cycle_link or ())
+        if frame.op_type == "remove" and blink_on and visual.node_id == frame.removed_id:
+            return NodeVisualState.REMOVING
+        if frame.op_type == "replace" and blink_on and visual.node_id == frame.replaced_id:
+            return NodeVisualState.CHANGED
+        if frame.op_type == "add" and visual.node_id == frame.added_id:
+            return NodeVisualState.NEW
+        if visual.node_id in cycle_ids:
+            return NodeVisualState.CYCLE_ENDPOINT
+        if frame.current_new_id is not None and visual.node_id == frame.current_new_id:
+            return NodeVisualState.CURRENT
+        return NodeVisualState.NORMAL
 
     def _draw_links(
         self,
         frame: OperationFrame,
         visuals: list[NodeVisual],
         progress: float,
-    ) -> dict[int, int]:
-        radius_map = {}
+    ) -> dict[int, tuple[QPointF, QPointF]]:
+        anchor_map: dict[int, tuple[QPointF, QPointF]] = {}
+        half_heights: dict[int, float] = {}
         for visual in visuals:
             scale = 1.0
             if frame.op_type == "add" and visual.node_id == frame.added_id:
                 scale = 0.5 + 0.5 * progress
-            radius_map[visual.node_id] = int(32 * scale)
+            node = self._node_item(visual.value)
+            incoming = QPointF(visual.position[0] + node.incoming_anchor().x() * scale, visual.position[1])
+            outgoing = QPointF(visual.position[0] + node.outgoing_anchor().x() * scale, visual.position[1])
+            anchor_map[visual.node_id] = (incoming, outgoing)
+            half_heights[visual.node_id] = (self.theme.node_height / 2) * scale
 
         bidirectional = self.ll_type == "doubly"
         for index in range(len(visuals) - 1):
@@ -248,28 +357,49 @@ class LinkedListPySideVisualizer(LinkedListAnimation):
             link_progress = self._link_progress(frame, progress, current.node_id, next_visual.node_id)
 
             if current.row != next_visual.row:
-                start = (current.position[0], current.position[1] + radius_map.get(current.node_id, 42))
-                end = (next_visual.position[0], next_visual.position[1] - radius_map.get(next_visual.node_id, 42))
+                start = (
+                    float(current.position[0]),
+                    current.position[1] + half_heights.get(current.node_id, 42.0),
+                )
+                end = (
+                    float(next_visual.position[0]),
+                    next_visual.position[1] - half_heights.get(next_visual.node_id, 42.0),
+                )
                 turn_y = current.position[1] + (next_visual.position[1] - current.position[1]) / 2
                 path = [start, (start[0], turn_y), (end[0], turn_y), end]
-                self._draw_polyline_arrow(path, ARROW_COLOR, link_progress, 3)
+                self._draw_polyline_arrow(path, self.theme.arrow, link_progress, self.theme.arrow_stroke_width)
                 if bidirectional:
-                    self._draw_polyline_arrow(list(reversed(path)), ARROW_COLOR, link_progress, 3)
+                    self._draw_polyline_arrow(
+                        list(reversed(path)),
+                        self.theme.arrow_muted,
+                        link_progress,
+                        self.theme.reverse_arrow_stroke_width,
+                        item_kind="reverse-link",
+                    )
             else:
-                start = (current.position[0] + radius_map.get(current.node_id, 42), current.position[1])
-                end = (next_visual.position[0] - radius_map.get(next_visual.node_id, 42), next_visual.position[1])
-                self._draw_arrow(start, end, ARROW_COLOR, link_progress, 3)
+                start_anchor = anchor_map[current.node_id][1]
+                end_anchor = anchor_map[next_visual.node_id][0]
+                start = (start_anchor.x(), start_anchor.y())
+                end = (end_anchor.x(), end_anchor.y())
                 if bidirectional:
-                    self._draw_arrow(end, start, ARROW_COLOR, link_progress, 3)
+                    self._draw_bidirectional_arrow(
+                        start,
+                        end,
+                        self.theme.arrow_muted,
+                        link_progress,
+                        self.theme.reverse_arrow_stroke_width,
+                    )
+                else:
+                    self._draw_arrow(start, end, self.theme.arrow, link_progress, self.theme.arrow_stroke_width)
 
-        return radius_map
+        return anchor_map
 
     def _draw_cycle_link(
         self,
         frame: OperationFrame,
         visuals: list[NodeVisual],
         progress: float,
-        radius_map: dict[int, int],
+        anchor_map: dict[int, tuple[QPointF, QPointF]],
     ) -> None:
         if not frame.cycle_link:
             return
@@ -280,24 +410,16 @@ class LinkedListPySideVisualizer(LinkedListAnimation):
         if not cycle_end or not cycle_start:
             return
 
-        start_radius = radius_map.get(cycle_end.node_id, 32)
-        end_radius = radius_map.get(cycle_start.node_id, 32)
-        start_point = (cycle_end.position[0] + start_radius, cycle_end.position[1])
-        end_point = (cycle_start.position[0] - end_radius, cycle_start.position[1])
+        start_anchor = anchor_map.get(cycle_end.node_id, (QPointF(*cycle_end.position), QPointF(*cycle_end.position)))[1]
+        end_anchor = anchor_map.get(cycle_start.node_id, (QPointF(*cycle_start.position), QPointF(*cycle_start.position)))[0]
+        start_point = (start_anchor.x(), start_anchor.y())
+        end_point = (end_anchor.x(), end_anchor.y())
         min_y = min(cycle_end.position[1], cycle_start.position[1])
         max_y = max(cycle_end.position[1], cycle_start.position[1])
         mid_y = min_y - 70
         if mid_y < 30:
             mid_y = max_y + 70
-        path = [
-            start_point,
-            (start_point[0] + 30, start_point[1]),
-            (start_point[0] + 30, mid_y),
-            (end_point[0] - 30, mid_y),
-            (end_point[0] - 30, end_point[1]),
-            end_point,
-        ]
-        self._draw_polyline_arrow(path, CYCLE_COLOR, self._cycle_progress(frame, progress), 3)
+        self._draw_cycle_arrow(start_point, end_point, mid_y, self._cycle_progress(frame, progress))
 
     def _link_progress(self, frame: OperationFrame, progress: float, current_id: int, next_id: int) -> float:
         op_elapsed = progress * frame.duration
@@ -324,7 +446,8 @@ class LinkedListPySideVisualizer(LinkedListAnimation):
             return self.clamp((progress - arrow_in_start) / max(1 - arrow_in_start, 0.01), 0.0, 1.0)
         return 0.0
 
-    def _draw_arrow(self, start, end, color, progress=1.0, width=2, arrow_size=12) -> None:
+    def _draw_arrow(self, start, end, color, progress=1.0, width=2, arrow_size=None, item_kind="link") -> None:
+        arrow_size = arrow_size or self.theme.arrow_head_size
         progress = self.clamp(progress, 0.0, 1.0)
         if progress <= 0:
             return
@@ -337,11 +460,33 @@ class LinkedListPySideVisualizer(LinkedListAnimation):
         path.lineTo(*end_point)
         item = QGraphicsPathItem(path)
         item.setPen(QPen(self._color(color), width))
+        item.setData(0, item_kind)
         self.scene.addItem(item)
         if progress >= 0.98:
-            self._draw_arrow_head(start, end, color, arrow_size)
+            self._draw_arrow_head(start, end, color, arrow_size, item_kind=f"{item_kind}-arrowhead")
 
-    def _draw_polyline_arrow(self, points, color, progress=1.0, width=2, arrow_size=12) -> None:
+    def _draw_bidirectional_arrow(self, start, end, color, progress=1.0, width=2, arrow_size=None) -> None:
+        arrow_size = arrow_size or self.theme.arrow_head_size
+        progress = self.clamp(progress, 0.0, 1.0)
+        if progress <= 0:
+            return
+        end_point = (
+            start[0] + (end[0] - start[0]) * progress,
+            start[1] + (end[1] - start[1]) * progress,
+        )
+        path = QPainterPath()
+        path.moveTo(*start)
+        path.lineTo(*end_point)
+        item = QGraphicsPathItem(path)
+        item.setPen(QPen(self._color(color), width))
+        item.setData(0, "bidirectional-link")
+        self.scene.addItem(item)
+        if progress >= 0.98:
+            self._draw_arrow_head(start, end, color, arrow_size, item_kind="bidirectional-link-arrowhead")
+            self._draw_arrow_head(end, start, color, arrow_size, item_kind="bidirectional-link-arrowhead")
+
+    def _draw_polyline_arrow(self, points, color, progress=1.0, width=2, arrow_size=None, item_kind="link") -> None:
+        arrow_size = arrow_size or self.theme.arrow_head_size
         if len(points) < 2:
             return
         segments = []
@@ -374,11 +519,12 @@ class LinkedListPySideVisualizer(LinkedListAnimation):
                 break
         item = QGraphicsPathItem(path)
         item.setPen(QPen(self._color(color), width))
+        item.setData(0, item_kind)
         self.scene.addItem(item)
         if self.clamp(progress, 0.0, 1.0) >= 0.98:
-            self._draw_arrow_head(segments[-1][0], segments[-1][1], color, arrow_size)
+            self._draw_arrow_head(segments[-1][0], segments[-1][1], color, arrow_size, item_kind=f"{item_kind}-arrowhead")
 
-    def _draw_arrow_head(self, start, end, color, arrow_size=12) -> None:
+    def _draw_arrow_head(self, start, end, color, arrow_size=12, item_kind="link-arrowhead") -> None:
         direction = (start[0] - end[0], start[1] - end[1])
         length = math.hypot(direction[0], direction[1])
         if length == 0:
@@ -396,7 +542,31 @@ class LinkedListPySideVisualizer(LinkedListAnimation):
         arrow = QGraphicsPolygonItem(QPolygonF([self._point(end), self._point(left), self._point(right)]))
         arrow.setBrush(QBrush(self._color(color)))
         arrow.setPen(QPen(self._color(color), 1))
+        arrow.setData(0, item_kind)
         self.scene.addItem(arrow)
+
+    def _draw_cycle_arrow(self, start, end, control_y, progress: float) -> None:
+        progress = self.clamp(progress, 0.0, 1.0)
+        if progress <= 0:
+            return
+        path = QPainterPath()
+        path.moveTo(*start)
+        control_offset = max(80.0, abs(end[0] - start[0]) / 2)
+        control_1 = (start[0] + control_offset, control_y)
+        control_2 = (end[0] - control_offset, control_y)
+        path.cubicTo(*control_1, *control_2, *end)
+        item = QGraphicsPathItem(path)
+        item.setPen(QPen(self._color(self.theme.cycle_arrow), self.theme.cycle_arrow_stroke_width))
+        item.setData(0, "cycle-link")
+        self.scene.addItem(item)
+        if progress >= 0.98:
+            self._draw_arrow_head(
+                control_2,
+                end,
+                self.theme.cycle_arrow,
+                self.theme.arrow_head_size,
+                item_kind="cycle-link-arrowhead",
+            )
 
     def _text_item(self, text: str, size: int, color) -> QGraphicsTextItem:
         item = QGraphicsTextItem(text)
@@ -405,9 +575,20 @@ class LinkedListPySideVisualizer(LinkedListAnimation):
         return item
 
     def _color(self, rgb) -> QColor:
-        return QColor(int(rgb[0]), int(rgb[1]), int(rgb[2]))
+        return _color(rgb)
 
     def _point(self, point):
         from PySide6.QtCore import QPointF
 
         return QPointF(float(point[0]), float(point[1]))
+
+    def _node_half_width(self, value: NodeValue) -> float:
+        return self._node_item(value).boundingRect().width() / 2
+
+    def _node_item(self, value: NodeValue) -> LinkedListNodeItem:
+        item = LinkedListNodeItem(value, NodeVisualState.NORMAL, self.theme, node_kind=self.ll_type)
+        return item
+
+
+def _color(rgb) -> QColor:
+    return QColor(int(rgb[0]), int(rgb[1]), int(rgb[2]))
