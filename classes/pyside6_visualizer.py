@@ -8,6 +8,7 @@ from PySide6.QtGui import (
     QBrush,
     QColor,
     QFont,
+    QImage,
     QPainter,
     QPainterPath,
     QPen,
@@ -333,6 +334,9 @@ class PlaybackControls(QWidget):
         self.restart_button = self._button("Restart", "restart_button")
         self.fit_to_view_button = self._button("Fit", "fit_to_view_button")
         self.reset_zoom_button = self._button("Reset Zoom", "reset_zoom_button")
+        self.export_screenshot_button = self._button("Export PNG", "export_screenshot_button")
+        self.screenshot_status_label = QLabel(visualizer.screenshot_status)
+        self.screenshot_status_label.setObjectName("screenshot_status")
 
         self.jump_to_beginning_button.clicked.connect(visualizer.jump_to_beginning)
         self.previous_frame_button.clicked.connect(visualizer.previous_frame)
@@ -343,6 +347,7 @@ class PlaybackControls(QWidget):
         self.restart_button.clicked.connect(visualizer.restart_playback)
         self.fit_to_view_button.clicked.connect(visualizer.fit_to_view)
         self.reset_zoom_button.clicked.connect(visualizer.reset_zoom)
+        self.export_screenshot_button.clicked.connect(visualizer.export_screenshot)
 
         layout = QHBoxLayout()
         layout.addWidget(self.jump_to_beginning_button)
@@ -354,6 +359,8 @@ class PlaybackControls(QWidget):
         layout.addWidget(self.restart_button)
         layout.addWidget(self.fit_to_view_button)
         layout.addWidget(self.reset_zoom_button)
+        layout.addWidget(self.export_screenshot_button)
+        layout.addWidget(self.screenshot_status_label)
         layout.addStretch(1)
         self.setLayout(layout)
 
@@ -379,6 +386,7 @@ class LinkedListPySideVisualizer(LinkedListAnimation):
         self.theme = theme
         self.operation_queue = OperationQueue(operations)
         self.playback = PlaybackController([])
+        self.screenshot_status = ""
         self._frames: list[OperationFrame] = []
         self._operations_panel: OperationsPanel | None = None
         self._playback_controls: PlaybackControls | None = None
@@ -515,6 +523,50 @@ class LinkedListPySideVisualizer(LinkedListAnimation):
 
     def reset_zoom(self) -> None:
         self.view.reset_zoom()
+
+    def export_screenshot(self, path: Path | None = None) -> bool:
+        if path is None:
+            selected, _filter = QFileDialog.getSaveFileName(
+                self.view,
+                "Export Screenshot",
+                "linked-list.png",
+                "PNG Images (*.png);;All Files (*)",
+            )
+            if not selected:
+                self._set_screenshot_status("")
+                return False
+            path = Path(selected)
+
+        if path.suffix.lower() != ".png":
+            path = path.with_suffix(".png")
+
+        scene_rect = self.scene.sceneRect()
+        width = max(1, math.ceil(scene_rect.width()))
+        height = max(1, math.ceil(scene_rect.height()))
+        image = QImage(width, height, QImage.Format.Format_ARGB32)
+        image.fill(self._color(self.theme.canvas))
+
+        painter = QPainter(image)
+        try:
+            self.scene.render(painter, QRectF(image.rect()), scene_rect)
+        finally:
+            painter.end()
+
+        try:
+            saved = image.save(str(path))
+        except ValueError:
+            saved = False
+        if not saved:
+            self._set_screenshot_status(f"Unable to save screenshot to {path}")
+            return False
+
+        self._set_screenshot_status(f"Saved screenshot to {path}")
+        return True
+
+    def _set_screenshot_status(self, message: str) -> None:
+        self.screenshot_status = message
+        if self._playback_controls is not None:
+            self._playback_controls.screenshot_status_label.setText(message)
 
     def render_first_frame(self, frames: list[OperationFrame]) -> None:
         frame, progress, frame_index = self.get_frame_at_time(frames, 0.0)
