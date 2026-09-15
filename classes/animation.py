@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from classes.linked_list import LinkedList
-from constants import DEFAULT_HEIGHT, DEFAULT_INTERVAL, DEFAULT_WIDTH, PANEL_WIDTH
+from constants import DEFAULT_HEIGHT, DEFAULT_INTERVAL, DEFAULT_WIDTH
 
 NodeValue = int | float | str | bool
 Operation = tuple[str, list[NodeValue], str]
@@ -92,7 +92,7 @@ class LinkedListAnimation:
     def layout_nodes(self, nodes: list[NodeState], width: int, height: int) -> list[NodeVisual]:
         count = max(1, len(nodes))
         margin = 80
-        usable_width = max(200, width - margin * 2 - PANEL_WIDTH)
+        usable_width = max(200, width - margin * 2)
         min_spacing = 180
         max_per_row = max(1, int(usable_width // min_spacing) + 1)
         per_row = min(count, max_per_row)
@@ -105,7 +105,7 @@ class LinkedListAnimation:
         for index, node in enumerate(nodes):
             row = index // per_row
             col = index % per_row
-            x = int(PANEL_WIDTH + margin + col * spacing_x)
+            x = int(margin + col * spacing_x)
             y = int(margin + row * spacing_y)
             visuals.append(NodeVisual(node.node_id, node.value, (x, y), row, col))
         return visuals

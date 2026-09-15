@@ -87,7 +87,7 @@ def main() -> None:
     """Run the linked list visualizer CLI."""
     parser = argparse.ArgumentParser(description="Visualize a linked list.")
     parser.add_argument("ll_type", choices=["singly", "doubly"], default = "singly", help="Linked List type.  Singly or Doubly.")
-    parser.add_argument("display", choices=["print", "animate", "gui"], help="Print, visualize with pygame, or visualize with PySide6.")
+    parser.add_argument("display", choices=["print", "animate", "gui"], help="Print or visualize with PySide6.")
     parser.add_argument("--values", type=str, default="", help="Comma-separated list of node values.")
     parser.add_argument("--ops-file", type=str, default="", help="Path to operations text file.")
     parser.add_argument("--node-interval", type=float, help="Seconds per operation.")
@@ -110,16 +110,7 @@ def main() -> None:
             values = cast(list[NodeValue], DEFAULT_VALUES.copy())
             operations = [("append", [value], f"append {value}") for value in values]
 
-        if args.display == "animate":
-            from classes.visualizer import LinkedListVisualizer
-
-            pygame_visualizer = LinkedListVisualizer(
-                ll_type=args.ll_type,
-                operations=operations
-            )
-            pygame_visualizer.configure(vars(args))
-            pygame_visualizer.display()
-        elif args.display == "gui":
+        if args.display in {"animate", "gui"}:
             from classes.pyside6_visualizer import LinkedListPySideVisualizer
 
             gui_visualizer = LinkedListPySideVisualizer(

@@ -45,7 +45,7 @@ If an operations file is provided and `--values` is omitted, the visualization s
 
 **Arguments**
 - `lltype`: `singly` or `doubly` linked list
-- `display`: `print` or `animate`
+- `display`: `print`, `gui`, or `animate`
 - `--values`: Comma-separated list of node values (default uses `DEFAULT_VALUES`).
 - `--operations-file`: Path to a text file of operations (see format below).
 - `--node-interval`: Seconds per node animation (default `0.4`).
@@ -110,10 +110,7 @@ and displaying linked lists interactively.
 
 
 ## Animation
-Linked lists can be visualized using the `pygame` engine.  The command
-line or shell command `animate` will open a window that displays the linked list
-animation.  The animation will show the linked list being built and modified
-according to the operations specified in the operations file.
-
-**Screenshot**
-![Linked List Visualizer](docs/LinkedListVisualizer_Screenshot1.png)
+Linked lists can be visualized using the PySide6 GUI. The command line or shell
+command `gui` opens the interactive visualizer with operation history, playback
+controls, zoom/pan, and PNG export. The `animate` display mode remains available
+as a compatibility alias for the PySide6 GUI.
