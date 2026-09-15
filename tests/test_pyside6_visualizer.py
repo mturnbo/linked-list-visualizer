@@ -630,6 +630,26 @@ def test_export_screenshot_failure_updates_status(tmp_path):
     app.processEvents()
 
 
+def test_export_screenshot_button_ignores_qt_checked_argument(tmp_path, monkeypatch):
+    app = QApplication.instance() or QApplication([])
+    visualizer = LinkedListPySideVisualizer("singly", [("append", [1], "append 1")])
+    visualizer.replay_current_operations()
+    controls = visualizer.create_playback_controls()
+    export_path = tmp_path / "button-export.png"
+
+    monkeypatch.setattr(
+        "classes.pyside6_visualizer.QFileDialog.getSaveFileName",
+        lambda *_args, **_kwargs: (str(export_path), "PNG Images (*.png)"),
+    )
+
+    controls.export_screenshot_button.click()
+
+    assert export_path.exists()
+    assert not QImage(str(export_path)).isNull()
+    assert visualizer.screenshot_status == f"Saved screenshot to {export_path}"
+    app.processEvents()
+
+
 def test_playback_controls_pause_resume_and_step_scene():
     app = QApplication.instance() or QApplication([])
     visualizer = LinkedListPySideVisualizer(

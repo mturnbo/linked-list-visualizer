@@ -347,7 +347,7 @@ class PlaybackControls(QWidget):
         self.restart_button.clicked.connect(visualizer.restart_playback)
         self.fit_to_view_button.clicked.connect(visualizer.fit_to_view)
         self.reset_zoom_button.clicked.connect(visualizer.reset_zoom)
-        self.export_screenshot_button.clicked.connect(visualizer.export_screenshot)
+        self.export_screenshot_button.clicked.connect(visualizer.prompt_export_screenshot)
 
         layout = QHBoxLayout()
         layout.addWidget(self.jump_to_beginning_button)
@@ -523,6 +523,9 @@ class LinkedListPySideVisualizer(LinkedListAnimation):
 
     def reset_zoom(self) -> None:
         self.view.reset_zoom()
+
+    def prompt_export_screenshot(self) -> bool:
+        return self.export_screenshot()
 
     def export_screenshot(self, path: Path | None = None) -> bool:
         if path is None:
