@@ -12,7 +12,6 @@ from PySide6.QtWidgets import (
     QGraphicsItem,
     QGraphicsPathItem,
     QGraphicsPolygonItem,
-    QGraphicsRectItem,
     QGraphicsScene,
     QGraphicsTextItem,
     QGraphicsView,
@@ -357,7 +356,6 @@ class LinkedListPySideVisualizer(LinkedListAnimation):
         self.scene.clear()
         self.scene.setSceneRect(0, 0, self.width, self.height)
         self._draw_background()
-        self._draw_operations_panel(frames, frame_index)
         if self._operations_panel is not None:
             self._operations_panel.set_current_operation(frame_index)
 
@@ -369,6 +367,27 @@ class LinkedListPySideVisualizer(LinkedListAnimation):
         self._draw_nodes(frame, visuals, progress, blink_on)
         anchor_map = self._draw_links(frame, visuals, progress)
         self._draw_cycle_link(frame, visuals, progress, anchor_map)
+
+    def layout_nodes(self, nodes: list[NodeState], width: int, height: int) -> list[NodeVisual]:
+        count = max(1, len(nodes))
+        margin = 80
+        usable_width = max(200, width - margin * 2)
+        min_spacing = 180
+        max_per_row = max(1, int(usable_width // min_spacing) + 1)
+        per_row = min(count, max_per_row)
+        rows = math.ceil(count / per_row)
+        spacing_x = usable_width / max(1, per_row - 1)
+        usable_height = max(200, height - margin * 2)
+        spacing_y = usable_height / max(1, rows - 1)
+
+        visuals = []
+        for index, node in enumerate(nodes):
+            row = index // per_row
+            col = index % per_row
+            x = int(margin + col * spacing_x)
+            y = int(margin + row * spacing_y)
+            visuals.append(NodeVisual(node.node_id, node.value, (x, y), row, col))
+        return visuals
 
     def _resolve_nodes_to_render(
         self,
@@ -435,31 +454,10 @@ class LinkedListPySideVisualizer(LinkedListAnimation):
     def _draw_background(self) -> None:
         self.scene.setBackgroundBrush(QBrush(self._color(self.theme.canvas)))
 
-    def _draw_operations_panel(self, frames: list[OperationFrame], frame_index: int) -> None:
-        panel = QGraphicsRectItem(20, 20, PANEL_WIDTH - 40, self.height - 40)
-        panel.setBrush(QBrush(self._color(self.theme.panel_fill)))
-        panel.setPen(QPen(self._color(self.theme.panel_stroke), 2))
-        self.scene.addItem(panel)
-
-        title = self._text_item("Operations", self.theme.panel_title_size, self.theme.panel_text)
-        title.setPos(36, 34)
-        self.scene.addItem(title)
-
-        line_height = 22
-        max_lines = max(1, (self.height - 100) // line_height)
-        end_index = max(0, frame_index + 1)
-        start_index = max(0, end_index - max_lines)
-        for idx, op_frame in enumerate(frames[start_index:end_index]):
-            op_index = start_index + idx
-            color = self.theme.panel_current_text if op_index == frame_index else self.theme.panel_text
-            item = self._text_item(op_frame.label, self.theme.panel_text_size, color)
-            item.setPos(36, 68 + idx * line_height)
-            self.scene.addItem(item)
-
     def _draw_empty_state(self) -> None:
         item = self._text_item("No linked list operations yet", self.theme.empty_state_size, self.theme.empty_state_text)
         bounds = item.boundingRect()
-        x = PANEL_WIDTH + (self.width - PANEL_WIDTH - bounds.width()) / 2
+        x = (self.width - bounds.width()) / 2
         y = (self.height - bounds.height()) / 2
         item.setPos(x, y)
         self.scene.addItem(item)

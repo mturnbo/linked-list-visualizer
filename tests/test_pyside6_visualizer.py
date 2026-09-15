@@ -259,6 +259,53 @@ def test_pyside6_renderer_renders_intentional_empty_state():
     app.processEvents()
 
 
+def test_pyside6_renderer_centers_empty_state_in_full_canvas():
+    app = QApplication.instance() or QApplication([])
+    visualizer = LinkedListPySideVisualizer("singly", [], width=800, height=400)
+
+    visualizer.render_first_frame([])
+
+    message = next(item for item in visualizer.scene.items() if isinstance(item, QGraphicsTextItem))
+    assert message.sceneBoundingRect().center().x() == pytest.approx(400, abs=2)
+    app.processEvents()
+
+
+def test_pyside6_renderer_does_not_draw_operations_history_in_scene():
+    app = QApplication.instance() or QApplication([])
+    visualizer = LinkedListPySideVisualizer(
+        "singly",
+        [
+            ("append", [1], "append 1"),
+            ("append", [2], "append 2"),
+        ],
+    )
+    frames = visualizer.build_frames(visualizer.operations, visualizer.node_interval)
+
+    visualizer.render_frame(frames, frames[-1], progress=1.0, frame_index=1, elapsed=1.0)
+
+    scene_text = [item.toPlainText() for item in visualizer.scene.items() if isinstance(item, QGraphicsTextItem)]
+    assert "Operations" not in scene_text
+    assert "append 1" not in scene_text
+    assert "append 2" not in scene_text
+    app.processEvents()
+
+
+def test_pyside6_renderer_lays_out_nodes_across_full_canvas():
+    app = QApplication.instance() or QApplication([])
+    visualizer = LinkedListPySideVisualizer(
+        "singly",
+        [("append", [1], "append 1")],
+        width=800,
+        height=400,
+    )
+    frames = visualizer.build_frames(visualizer.operations, visualizer.node_interval)
+
+    visual = visualizer.layout_nodes(frames[-1].nodes_after, visualizer.width, visualizer.height)[0]
+
+    assert visual.position == (80, 80)
+    app.processEvents()
+
+
 def test_pyside6_visualizer_can_be_constructed_before_qapplication():
     script = """
 import os
