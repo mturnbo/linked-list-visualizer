@@ -4,7 +4,16 @@ from pathlib import Path
 from typing import cast
 
 from PySide6.QtCore import QPointF, QRectF, Qt, QTimer
-from PySide6.QtGui import QBrush, QColor, QFont, QPainter, QPainterPath, QPen, QPolygonF
+from PySide6.QtGui import (
+    QBrush,
+    QColor,
+    QFont,
+    QPainter,
+    QPainterPath,
+    QPen,
+    QPolygonF,
+    QWheelEvent,
+)
 from PySide6.QtWidgets import (
     QApplication,
     QComboBox,
@@ -117,6 +126,65 @@ class LinkedListNodeItem(QGraphicsItem):
             painter.drawLine(QPointF(x, self._body_rect.top()), QPointF(x, self._body_rect.bottom()))
         x = self.value_rect.right()
         painter.drawLine(QPointF(x, self._body_rect.top()), QPointF(x, self._body_rect.bottom()))
+
+
+class CanvasGraphicsView(QGraphicsView):
+    def __init__(
+        self,
+        scene: QGraphicsScene,
+        min_zoom: float = 0.25,
+        max_zoom: float = 4.0,
+        zoom_step: float = 1.15,
+    ) -> None:
+        super().__init__(scene)
+        self.min_zoom = min_zoom
+        self.max_zoom = max_zoom
+        self.zoom_step = zoom_step
+        self.current_zoom = 1.0
+        self.fit_target = QRectF()
+        self.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+        self.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
+        self.setResizeAnchor(QGraphicsView.ViewportAnchor.AnchorViewCenter)
+        self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
+        self.setInteractive(True)
+
+    def wheelEvent(self, event: QWheelEvent) -> None:
+        if event.angleDelta().y() > 0:
+            self.zoom_in()
+        else:
+            self.zoom_out()
+        event.accept()
+
+    def zoom_in(self) -> None:
+        self.set_zoom(self.current_zoom * self.zoom_step)
+
+    def zoom_out(self) -> None:
+        self.set_zoom(self.current_zoom / self.zoom_step)
+
+    def set_zoom(self, zoom: float) -> None:
+        self.current_zoom = max(self.min_zoom, min(zoom, self.max_zoom))
+        self.resetTransform()
+        self.scale(self.current_zoom, self.current_zoom)
+
+    def reset_zoom(self) -> None:
+        self.set_zoom(1.0)
+
+    def fit_to_scene_contents(self) -> None:
+        scene = self.scene()
+        if scene is None:
+            self.reset_zoom()
+            return
+
+        bounds = scene.itemsBoundingRect()
+        if bounds.isNull():
+            bounds = scene.sceneRect()
+        self.fit_target = bounds.adjusted(-40.0, -40.0, 40.0, 40.0)
+        self.fitInView(self.fit_target, Qt.AspectRatioMode.KeepAspectRatio)
+        fitted_zoom = self.transform().m11()
+        if fitted_zoom < self.min_zoom or fitted_zoom > self.max_zoom:
+            self.set_zoom(fitted_zoom)
+        else:
+            self.current_zoom = fitted_zoom
 
 
 class OperationsPanel(QWidget):
@@ -263,6 +331,8 @@ class PlaybackControls(QWidget):
         self.next_frame_button = self._button("Next", "next_frame_button")
         self.jump_to_end_button = self._button("End", "jump_to_end_button")
         self.restart_button = self._button("Restart", "restart_button")
+        self.fit_to_view_button = self._button("Fit", "fit_to_view_button")
+        self.reset_zoom_button = self._button("Reset Zoom", "reset_zoom_button")
 
         self.jump_to_beginning_button.clicked.connect(visualizer.jump_to_beginning)
         self.previous_frame_button.clicked.connect(visualizer.previous_frame)
@@ -271,6 +341,8 @@ class PlaybackControls(QWidget):
         self.next_frame_button.clicked.connect(visualizer.next_frame)
         self.jump_to_end_button.clicked.connect(visualizer.jump_to_end)
         self.restart_button.clicked.connect(visualizer.restart_playback)
+        self.fit_to_view_button.clicked.connect(visualizer.fit_to_view)
+        self.reset_zoom_button.clicked.connect(visualizer.reset_zoom)
 
         layout = QHBoxLayout()
         layout.addWidget(self.jump_to_beginning_button)
@@ -280,6 +352,8 @@ class PlaybackControls(QWidget):
         layout.addWidget(self.next_frame_button)
         layout.addWidget(self.jump_to_end_button)
         layout.addWidget(self.restart_button)
+        layout.addWidget(self.fit_to_view_button)
+        layout.addWidget(self.reset_zoom_button)
         layout.addStretch(1)
         self.setLayout(layout)
 
@@ -310,7 +384,7 @@ class LinkedListPySideVisualizer(LinkedListAnimation):
         self._playback_controls: PlaybackControls | None = None
         self._app: QApplication | None = None
         self._scene: QGraphicsScene | None = None
-        self._view: QGraphicsView | None = None
+        self._view: CanvasGraphicsView | None = None
 
     @property
     def scene(self) -> QGraphicsScene:
@@ -320,10 +394,10 @@ class LinkedListPySideVisualizer(LinkedListAnimation):
         return self._scene
 
     @property
-    def view(self) -> QGraphicsView:
+    def view(self) -> CanvasGraphicsView:
         if self._view is None:
             self._ensure_qt_app()
-            self._view = QGraphicsView(self.scene)
+            self._view = CanvasGraphicsView(self.scene)
         return self._view
 
     def display(self):
@@ -435,6 +509,12 @@ class LinkedListPySideVisualizer(LinkedListAnimation):
     def jump_to_end(self) -> None:
         self.playback.jump_to_end()
         self.render_playback_state()
+
+    def fit_to_view(self) -> None:
+        self.view.fit_to_scene_contents()
+
+    def reset_zoom(self) -> None:
+        self.view.reset_zoom()
 
     def render_first_frame(self, frames: list[OperationFrame]) -> None:
         frame, progress, frame_index = self.get_frame_at_time(frames, 0.0)
