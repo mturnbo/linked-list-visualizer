@@ -16,6 +16,7 @@ from PySide6.QtWidgets import (
     QGraphicsTextItem,
     QLineEdit,
     QListWidget,
+    QPushButton,
 )
 
 from classes.pyside6_theme import NodeVisualState, PySideTheme
@@ -417,4 +418,67 @@ def test_operations_panel_loads_file_and_replays(tmp_path):
     assert panel.operation_history.count() == 2
     node_items = [item for item in visualizer.scene.items() if isinstance(item, LinkedListNodeItem)]
     assert node_items
+    app.processEvents()
+
+
+def test_playback_controls_expose_expected_buttons():
+    app = QApplication.instance() or QApplication([])
+    visualizer = LinkedListPySideVisualizer("singly", [])
+
+    controls = visualizer.create_playback_controls()
+
+    assert controls.findChild(QPushButton, "play_button") is not None
+    assert controls.findChild(QPushButton, "pause_button") is not None
+    assert controls.findChild(QPushButton, "restart_button") is not None
+    assert controls.findChild(QPushButton, "previous_frame_button") is not None
+    assert controls.findChild(QPushButton, "next_frame_button") is not None
+    assert controls.findChild(QPushButton, "jump_to_beginning_button") is not None
+    assert controls.findChild(QPushButton, "jump_to_end_button") is not None
+    app.processEvents()
+
+
+def test_playback_controls_pause_resume_and_step_scene():
+    app = QApplication.instance() or QApplication([])
+    visualizer = LinkedListPySideVisualizer(
+        "singly",
+        [
+            ("append", [1], "append 1"),
+            ("append", [2], "append 2"),
+        ],
+    )
+    panel = visualizer.create_operations_panel()
+    visualizer.replay_current_operations()
+
+    visualizer.pause_playback()
+    visualizer.advance_playback(1.0)
+    assert visualizer.playback.current_frame_index == 0
+
+    visualizer.play_playback()
+    visualizer.advance_playback(visualizer.node_interval)
+    assert visualizer.playback.current_frame_index == 1
+    assert panel.operation_history.currentRow() == 1
+
+    visualizer.previous_frame()
+    assert visualizer.playback.current_frame_index == 0
+    assert panel.operation_history.currentRow() == 0
+    app.processEvents()
+
+
+def test_restart_playback_returns_to_first_frame():
+    app = QApplication.instance() or QApplication([])
+    visualizer = LinkedListPySideVisualizer(
+        "singly",
+        [
+            ("append", [1], "append 1"),
+            ("append", [2], "append 2"),
+        ],
+    )
+    visualizer.replay_current_operations()
+    visualizer.jump_to_end()
+
+    visualizer.restart_playback()
+
+    assert visualizer.playback.current_frame_index == 0
+    assert visualizer.playback.elapsed_in_frame == 0.0
+    assert visualizer.playback.playing
     app.processEvents()

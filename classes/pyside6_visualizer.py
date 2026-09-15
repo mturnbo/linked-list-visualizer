@@ -34,6 +34,7 @@ from classes.animation import (
     OperationFrame,
 )
 from classes.operation_input import OperationInputError, OperationQueue
+from classes.playback_controller import PlaybackController
 from classes.pyside6_theme import DEFAULT_PYSIDE_THEME, NodeVisualState, PySideTheme
 from constants import *
 
@@ -249,6 +250,46 @@ class OperationsPanel(QWidget):
         self.refresh_history()
 
 
+class PlaybackControls(QWidget):
+    def __init__(self, visualizer: "LinkedListPySideVisualizer") -> None:
+        super().__init__()
+        self.visualizer = visualizer
+        self.setObjectName("playback_controls")
+
+        self.jump_to_beginning_button = self._button("Start", "jump_to_beginning_button")
+        self.previous_frame_button = self._button("Previous", "previous_frame_button")
+        self.play_button = self._button("Play", "play_button")
+        self.pause_button = self._button("Pause", "pause_button")
+        self.next_frame_button = self._button("Next", "next_frame_button")
+        self.jump_to_end_button = self._button("End", "jump_to_end_button")
+        self.restart_button = self._button("Restart", "restart_button")
+
+        self.jump_to_beginning_button.clicked.connect(visualizer.jump_to_beginning)
+        self.previous_frame_button.clicked.connect(visualizer.previous_frame)
+        self.play_button.clicked.connect(visualizer.play_playback)
+        self.pause_button.clicked.connect(visualizer.pause_playback)
+        self.next_frame_button.clicked.connect(visualizer.next_frame)
+        self.jump_to_end_button.clicked.connect(visualizer.jump_to_end)
+        self.restart_button.clicked.connect(visualizer.restart_playback)
+
+        layout = QHBoxLayout()
+        layout.addWidget(self.jump_to_beginning_button)
+        layout.addWidget(self.previous_frame_button)
+        layout.addWidget(self.play_button)
+        layout.addWidget(self.pause_button)
+        layout.addWidget(self.next_frame_button)
+        layout.addWidget(self.jump_to_end_button)
+        layout.addWidget(self.restart_button)
+        layout.addStretch(1)
+        self.setLayout(layout)
+
+    @staticmethod
+    def _button(text: str, object_name: str) -> QPushButton:
+        button = QPushButton(text)
+        button.setObjectName(object_name)
+        return button
+
+
 class LinkedListPySideVisualizer(LinkedListAnimation):
     def __init__(
         self,
@@ -263,8 +304,10 @@ class LinkedListPySideVisualizer(LinkedListAnimation):
         super().__init__(ll_type, operations, width, height, node_interval, arrow_interval)
         self.theme = theme
         self.operation_queue = OperationQueue(operations)
+        self.playback = PlaybackController([])
         self._frames: list[OperationFrame] = []
         self._operations_panel: OperationsPanel | None = None
+        self._playback_controls: PlaybackControls | None = None
         self._app: QApplication | None = None
         self._scene: QGraphicsScene | None = None
         self._view: QGraphicsView | None = None
@@ -293,20 +336,23 @@ class LinkedListPySideVisualizer(LinkedListAnimation):
         layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.create_operations_panel())
-        layout.addWidget(self.view, stretch=1)
+        canvas_layout = QVBoxLayout()
+        canvas_layout.setContentsMargins(0, 0, 0, 0)
+        canvas_layout.addWidget(self.create_playback_controls())
+        canvas_layout.addWidget(self.view, stretch=1)
+        canvas_widget = QWidget()
+        canvas_widget.setLayout(canvas_layout)
+        layout.addWidget(canvas_widget, stretch=1)
         central_widget.setLayout(layout)
         window.setCentralWidget(central_widget)
 
         self._frames = self.build_frames(self.operations, self.node_interval)
-        elapsed = 0.0
+        self.playback.set_frames(self._frames)
 
         def tick():
-            nonlocal elapsed
-            elapsed += 1 / 60
-            frame, progress, frame_index = self.get_frame_at_time(self._frames, elapsed)
-            self.render_frame(self._frames, frame, progress, frame_index, elapsed)
+            self.advance_playback(1 / 60)
 
-        self.render_first_frame(self._frames)
+        self.render_playback_state()
 
         timer = QTimer(window)
         timer.timeout.connect(tick)
@@ -332,6 +378,11 @@ class LinkedListPySideVisualizer(LinkedListAnimation):
             self._operations_panel = OperationsPanel(self)
         return self._operations_panel
 
+    def create_playback_controls(self) -> PlaybackControls:
+        if self._playback_controls is None:
+            self._playback_controls = PlaybackControls(self)
+        return self._playback_controls
+
     def set_operations(self, operations: list[Operation]) -> None:
         self.operations = list(operations)
         self.operation_queue.operations = list(operations)
@@ -339,7 +390,51 @@ class LinkedListPySideVisualizer(LinkedListAnimation):
 
     def replay_current_operations(self) -> None:
         self._frames = self.build_frames(self.operations, self.node_interval)
-        self.render_first_frame(self._frames)
+        self.playback.set_frames(self._frames)
+        self.render_playback_state()
+
+    def render_playback_state(self) -> None:
+        frame = self.playback.current_frame
+        if frame is None:
+            self.render_first_frame([])
+            return
+        self.render_frame(
+            self._frames,
+            frame,
+            self.playback.current_progress,
+            self.playback.current_frame_index,
+            self.playback.elapsed_in_frame,
+        )
+
+    def advance_playback(self, seconds: float) -> None:
+        self.playback.advance(seconds)
+        self.render_playback_state()
+
+    def play_playback(self) -> None:
+        self.playback.play()
+
+    def pause_playback(self) -> None:
+        self.playback.pause()
+
+    def restart_playback(self) -> None:
+        self.playback.restart()
+        self.render_playback_state()
+
+    def previous_frame(self) -> None:
+        self.playback.step_previous()
+        self.render_playback_state()
+
+    def next_frame(self) -> None:
+        self.playback.step_next()
+        self.render_playback_state()
+
+    def jump_to_beginning(self) -> None:
+        self.playback.jump_to_beginning()
+        self.render_playback_state()
+
+    def jump_to_end(self) -> None:
+        self.playback.jump_to_end()
+        self.render_playback_state()
 
     def render_first_frame(self, frames: list[OperationFrame]) -> None:
         frame, progress, frame_index = self.get_frame_at_time(frames, 0.0)
