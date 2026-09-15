@@ -1,11 +1,14 @@
 import math
 import sys
+from pathlib import Path
 from typing import cast
 
 from PySide6.QtCore import QPointF, QRectF, Qt, QTimer
 from PySide6.QtGui import QBrush, QColor, QFont, QPainter, QPainterPath, QPen, QPolygonF
 from PySide6.QtWidgets import (
     QApplication,
+    QComboBox,
+    QFileDialog,
     QGraphicsItem,
     QGraphicsPathItem,
     QGraphicsPolygonItem,
@@ -13,7 +16,14 @@ from PySide6.QtWidgets import (
     QGraphicsScene,
     QGraphicsTextItem,
     QGraphicsView,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QListWidget,
     QMainWindow,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
 )
 
 from classes.animation import (
@@ -24,6 +34,7 @@ from classes.animation import (
     Operation,
     OperationFrame,
 )
+from classes.operation_input import OperationInputError, OperationQueue
 from classes.pyside6_theme import DEFAULT_PYSIDE_THEME, NodeVisualState, PySideTheme
 from constants import *
 
@@ -107,6 +118,138 @@ class LinkedListNodeItem(QGraphicsItem):
         x = self.value_rect.right()
         painter.drawLine(QPointF(x, self._body_rect.top()), QPointF(x, self._body_rect.bottom()))
 
+
+class OperationsPanel(QWidget):
+    def __init__(self, visualizer: "LinkedListPySideVisualizer") -> None:
+        super().__init__()
+        self.visualizer = visualizer
+        self.queue = visualizer.operation_queue
+        self.setObjectName("operations_panel")
+        self.setFixedWidth(PANEL_WIDTH)
+
+        self.list_type_selector = QComboBox()
+        self.list_type_selector.setObjectName("list_type_selector")
+        self.list_type_selector.addItems(["singly", "doubly"])
+        self.list_type_selector.setCurrentText(visualizer.ll_type)
+
+        self.operation_selector = QComboBox()
+        self.operation_selector.setObjectName("operation_selector")
+        self.operation_selector.addItems(
+            [
+                "append",
+                "prepend",
+                "insert",
+                "remove",
+                "replace",
+                "reverse",
+                "sort",
+                "cycle",
+                "has_cycle",
+                "clear",
+            ]
+        )
+
+        self.value_input = QLineEdit()
+        self.value_input.setObjectName("value_input")
+        self.value_input.setPlaceholderText("value")
+
+        self.index_input = QLineEdit()
+        self.index_input.setObjectName("index_input")
+        self.index_input.setPlaceholderText("index")
+
+        self.sort_method_selector = QComboBox()
+        self.sort_method_selector.setObjectName("sort_method_selector")
+        self.sort_method_selector.addItems(["1", "2"])
+
+        add_button = QPushButton("Add")
+        add_button.clicked.connect(self.add_current_operation)
+        load_button = QPushButton("Load File")
+        load_button.clicked.connect(self.load_operations_file)
+        clear_button = QPushButton("Clear")
+        clear_button.clicked.connect(self.clear_operations)
+
+        self.error_label = QLabel("")
+        self.error_label.setObjectName("operation_error")
+        self.error_label.setWordWrap(True)
+
+        self.operation_history = QListWidget()
+        self.operation_history.setObjectName("operation_history")
+
+        self.list_type_selector.currentTextChanged.connect(lambda _text: self.apply_list_type())
+
+        layout = QVBoxLayout()
+        layout.addWidget(QLabel("List Type"))
+        layout.addWidget(self.list_type_selector)
+        layout.addWidget(QLabel("Operation"))
+        layout.addWidget(self.operation_selector)
+        layout.addWidget(QLabel("Value"))
+        layout.addWidget(self.value_input)
+        layout.addWidget(QLabel("Index"))
+        layout.addWidget(self.index_input)
+        layout.addWidget(QLabel("Sort Method"))
+        layout.addWidget(self.sort_method_selector)
+        layout.addWidget(add_button)
+        layout.addWidget(load_button)
+        layout.addWidget(clear_button)
+        layout.addWidget(self.error_label)
+        layout.addWidget(QLabel("History"))
+        layout.addWidget(self.operation_history, stretch=1)
+        self.setLayout(layout)
+        self.refresh_history()
+
+    def add_current_operation(self) -> None:
+        try:
+            self.queue.add_operation(
+                self.operation_selector.currentText(),
+                value_text=self.value_input.text(),
+                index_text=self.index_input.text(),
+                sort_method_text=self.sort_method_selector.currentText(),
+            )
+        except OperationInputError as exc:
+            self.error_label.setText(str(exc))
+            return
+        self.error_label.setText("")
+        self._after_queue_update()
+
+    def clear_operations(self) -> None:
+        self.queue.clear()
+        self.error_label.setText("")
+        self._after_queue_update()
+
+    def apply_list_type(self) -> None:
+        self.visualizer.ll_type = self.list_type_selector.currentText()
+        self.visualizer.replay_current_operations()
+
+    def load_operations_file(self, path: Path | None = None) -> None:
+        if path is None:
+            selected, _filter = QFileDialog.getOpenFileName(self, "Load Operations", "", "Text Files (*.txt);;All Files (*)")
+            if not selected:
+                return
+            path = Path(selected)
+        try:
+            self.queue.load_operations_file(path)
+        except OperationInputError as exc:
+            self.error_label.setText(str(exc))
+            return
+        self.error_label.setText("")
+        self._after_queue_update()
+
+    def refresh_history(self) -> None:
+        self.operation_history.clear()
+        for _command, _args, label in self.queue.operations:
+            self.operation_history.addItem(label)
+
+    def set_current_operation(self, index: int) -> None:
+        if 0 <= index < self.operation_history.count():
+            self.operation_history.setCurrentRow(index)
+        else:
+            self.operation_history.clearSelection()
+
+    def _after_queue_update(self) -> None:
+        self.visualizer.set_operations(self.queue.operations)
+        self.refresh_history()
+
+
 class LinkedListPySideVisualizer(LinkedListAnimation):
     def __init__(
         self,
@@ -120,6 +263,9 @@ class LinkedListPySideVisualizer(LinkedListAnimation):
     ) -> None:
         super().__init__(ll_type, operations, width, height, node_interval, arrow_interval)
         self.theme = theme
+        self.operation_queue = OperationQueue(operations)
+        self._frames: list[OperationFrame] = []
+        self._operations_panel: OperationsPanel | None = None
         self._app: QApplication | None = None
         self._scene: QGraphicsScene | None = None
         self._view: QGraphicsView | None = None
@@ -144,18 +290,24 @@ class LinkedListPySideVisualizer(LinkedListAnimation):
         window = QMainWindow()
         window.setWindowTitle("Linked List Visualization")
         window.resize(self.width, self.height)
-        window.setCentralWidget(self.view)
+        central_widget = QWidget()
+        layout = QHBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(self.create_operations_panel())
+        layout.addWidget(self.view, stretch=1)
+        central_widget.setLayout(layout)
+        window.setCentralWidget(central_widget)
 
-        frames = self.build_frames(self.operations, self.node_interval)
+        self._frames = self.build_frames(self.operations, self.node_interval)
         elapsed = 0.0
 
         def tick():
             nonlocal elapsed
             elapsed += 1 / 60
-            frame, progress, frame_index = self.get_frame_at_time(frames, elapsed)
-            self.render_frame(frames, frame, progress, frame_index, elapsed)
+            frame, progress, frame_index = self.get_frame_at_time(self._frames, elapsed)
+            self.render_frame(self._frames, frame, progress, frame_index, elapsed)
 
-        self.render_first_frame(frames)
+        self.render_first_frame(self._frames)
 
         timer = QTimer(window)
         timer.timeout.connect(tick)
@@ -176,6 +328,20 @@ class LinkedListPySideVisualizer(LinkedListAnimation):
             raise TypeError("PySide6 visualizer requires a QApplication instance.")
         return cast(QApplication, app)
 
+    def create_operations_panel(self) -> OperationsPanel:
+        if self._operations_panel is None:
+            self._operations_panel = OperationsPanel(self)
+        return self._operations_panel
+
+    def set_operations(self, operations: list[Operation]) -> None:
+        self.operations = list(operations)
+        self.operation_queue.operations = list(operations)
+        self.replay_current_operations()
+
+    def replay_current_operations(self) -> None:
+        self._frames = self.build_frames(self.operations, self.node_interval)
+        self.render_first_frame(self._frames)
+
     def render_first_frame(self, frames: list[OperationFrame]) -> None:
         frame, progress, frame_index = self.get_frame_at_time(frames, 0.0)
         self.render_frame(frames, frame, progress, frame_index, 0.0)
@@ -192,6 +358,8 @@ class LinkedListPySideVisualizer(LinkedListAnimation):
         self.scene.setSceneRect(0, 0, self.width, self.height)
         self._draw_background()
         self._draw_operations_panel(frames, frame_index)
+        if self._operations_panel is not None:
+            self._operations_panel.set_current_operation(frame_index)
 
         nodes_render, blink_on = self._resolve_nodes_to_render(frame, progress, elapsed)
         visuals = self._resolve_visuals(frame, nodes_render, progress)

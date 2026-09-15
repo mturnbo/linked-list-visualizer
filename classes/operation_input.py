@@ -72,9 +72,19 @@ class OperationQueue:
         try:
             from main import parse_operations
 
-            self.operations = parse_operations(str(path))
+            self.operations = [self._normalize_loaded_operation(operation) for operation in parse_operations(str(path))]
         except ValueError as exc:
             raise OperationInputError(str(exc)) from exc
+
+    def _normalize_loaded_operation(self, operation: Operation) -> Operation:
+        command, args, label = operation
+        if command in {"append", "prepend"}:
+            return command, [to_ll_type(args[0])], label
+        if command in {"insert", "replace"}:
+            return command, [int(args[0]), to_ll_type(args[1])], label
+        if command in {"remove", "cycle", "sort"}:
+            return command, [int(args[0])], label
+        return operation
 
     def _append(self, operation: Operation) -> Operation:
         self.operations.append(operation)
