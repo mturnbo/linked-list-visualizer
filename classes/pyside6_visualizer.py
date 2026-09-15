@@ -542,6 +542,12 @@ class LinkedListPySideVisualizer(LinkedListAnimation):
         self._draw_nodes(frame, visuals, progress, blink_on)
         anchor_map = self._draw_links(frame, visuals, progress)
         self._draw_cycle_link(frame, visuals, progress, anchor_map)
+        self._resize_scene_to_contents()
+
+    @property
+    def minimum_row_spacing(self) -> int:
+        arrow_corridor = max(48.0, self.theme.arrow_head_size * 2)
+        return math.ceil(self.theme.node_height + arrow_corridor)
 
     def layout_nodes(self, nodes: list[NodeState], width: int, height: int) -> list[NodeVisual]:
         count = max(1, len(nodes))
@@ -553,7 +559,10 @@ class LinkedListPySideVisualizer(LinkedListAnimation):
         rows = math.ceil(count / per_row)
         spacing_x = usable_width / max(1, per_row - 1)
         usable_height = max(200, height - margin * 2)
-        spacing_y = usable_height / max(1, rows - 1)
+        spacing_y = max(
+            float(self.minimum_row_spacing),
+            usable_height / max(1, rows - 1),
+        )
 
         visuals = []
         for index, node in enumerate(nodes):
@@ -628,6 +637,11 @@ class LinkedListPySideVisualizer(LinkedListAnimation):
 
     def _draw_background(self) -> None:
         self.scene.setBackgroundBrush(QBrush(self._color(self.theme.canvas)))
+
+    def _resize_scene_to_contents(self) -> None:
+        content_bounds = self.scene.itemsBoundingRect().adjusted(-80.0, -80.0, 80.0, 80.0)
+        viewport_bounds = QRectF(0.0, 0.0, float(self.width), float(self.height))
+        self.scene.setSceneRect(viewport_bounds.united(content_bounds))
 
     def _draw_empty_state(self) -> None:
         item = self._text_item("No linked list operations yet", self.theme.empty_state_size, self.theme.empty_state_text)

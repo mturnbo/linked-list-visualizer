@@ -1,6 +1,7 @@
 import os
 import subprocess
 import sys
+from itertools import pairwise
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
@@ -480,6 +481,51 @@ def test_canvas_zoom_does_not_change_node_layout_state():
     after = visualizer.layout_nodes(frames[-1].nodes_after, visualizer.width, visualizer.height)
 
     assert [visual.position for visual in after] == [visual.position for visual in before]
+    app.processEvents()
+
+
+def test_wrapped_node_rows_keep_arrow_spacing_when_canvas_is_short():
+    app = QApplication.instance() or QApplication([])
+    visualizer = LinkedListPySideVisualizer(
+        "singly",
+        [
+            ("append", [value], f"append {value}")
+            for value in range(25)
+        ],
+        width=700,
+        height=360,
+    )
+    frames = visualizer.build_frames(visualizer.operations, visualizer.node_interval)
+
+    visuals = visualizer.layout_nodes(frames[-1].nodes_after, visualizer.width, visualizer.height)
+    row_y_positions = sorted({visual.position[1] for visual in visuals})
+    row_gaps = [
+        next_y - current_y
+        for current_y, next_y in pairwise(row_y_positions)
+    ]
+
+    assert row_gaps
+    assert min(row_gaps) >= visualizer.minimum_row_spacing
+    app.processEvents()
+
+
+def test_scene_rect_expands_to_wrapped_node_rows():
+    app = QApplication.instance() or QApplication([])
+    visualizer = LinkedListPySideVisualizer(
+        "singly",
+        [
+            ("append", [value], f"append {value}")
+            for value in range(25)
+        ],
+        width=700,
+        height=360,
+    )
+    frames = visualizer.build_frames(visualizer.operations, visualizer.node_interval)
+
+    visualizer.render_frame(frames, frames[-1], progress=1.0, frame_index=len(frames) - 1, elapsed=1.0)
+
+    assert visualizer.scene.sceneRect().contains(visualizer.scene.itemsBoundingRect())
+    assert visualizer.scene.sceneRect().height() > visualizer.height
     app.processEvents()
 
 
