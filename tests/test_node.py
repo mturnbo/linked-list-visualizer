@@ -1,4 +1,4 @@
-from classes.node import Node
+from linked_list import Node
 
 
 def test_node_singly_linked_list_usage():
