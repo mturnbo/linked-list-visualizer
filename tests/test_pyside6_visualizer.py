@@ -1,6 +1,7 @@
 import os
 import subprocess
 import sys
+from itertools import pairwise
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
@@ -13,7 +14,9 @@ from PySide6.QtWidgets import (
     QComboBox,
     QGraphicsPathItem,
     QGraphicsPolygonItem,
+    QGraphicsScene,
     QGraphicsTextItem,
+    QGraphicsView,
     QLineEdit,
     QListWidget,
     QPushButton,
@@ -21,6 +24,7 @@ from PySide6.QtWidgets import (
 
 from classes.pyside6_theme import NodeVisualState, PySideTheme
 from classes.pyside6_visualizer import (
+    CanvasGraphicsView,
     LinkedListNodeItem,
     LinkedListPySideVisualizer,
 )
@@ -434,6 +438,134 @@ def test_playback_controls_expose_expected_buttons():
     assert controls.findChild(QPushButton, "next_frame_button") is not None
     assert controls.findChild(QPushButton, "jump_to_beginning_button") is not None
     assert controls.findChild(QPushButton, "jump_to_end_button") is not None
+    assert controls.findChild(QPushButton, "fit_to_view_button") is not None
+    assert controls.findChild(QPushButton, "reset_zoom_button") is not None
+    app.processEvents()
+
+
+def test_canvas_graphics_view_clamps_and_resets_zoom():
+    app = QApplication.instance() or QApplication([])
+    view = CanvasGraphicsView(QGraphicsScene())
+
+    view.set_zoom(20.0)
+    assert view.current_zoom == view.max_zoom
+    assert view.transform().m11() == pytest.approx(view.max_zoom)
+
+    view.set_zoom(0.01)
+    assert view.current_zoom == view.min_zoom
+    assert view.transform().m11() == pytest.approx(view.min_zoom)
+
+    view.reset_zoom()
+    assert view.current_zoom == 1.0
+    assert view.transform().m11() == pytest.approx(1.0)
+    assert view.dragMode() == QGraphicsView.DragMode.ScrollHandDrag
+    app.processEvents()
+
+
+def test_canvas_zoom_does_not_change_node_layout_state():
+    app = QApplication.instance() or QApplication([])
+    visualizer = LinkedListPySideVisualizer(
+        "singly",
+        [
+            ("append", [value], f"append {value}")
+            for value in range(8)
+        ],
+        width=800,
+        height=400,
+    )
+    frames = visualizer.build_frames(visualizer.operations, visualizer.node_interval)
+    before = visualizer.layout_nodes(frames[-1].nodes_after, visualizer.width, visualizer.height)
+
+    assert isinstance(visualizer.view, CanvasGraphicsView)
+    visualizer.view.set_zoom(2.0)
+    after = visualizer.layout_nodes(frames[-1].nodes_after, visualizer.width, visualizer.height)
+
+    assert [visual.position for visual in after] == [visual.position for visual in before]
+    app.processEvents()
+
+
+def test_wrapped_node_rows_keep_arrow_spacing_when_canvas_is_short():
+    app = QApplication.instance() or QApplication([])
+    visualizer = LinkedListPySideVisualizer(
+        "singly",
+        [
+            ("append", [value], f"append {value}")
+            for value in range(25)
+        ],
+        width=700,
+        height=360,
+    )
+    frames = visualizer.build_frames(visualizer.operations, visualizer.node_interval)
+
+    visuals = visualizer.layout_nodes(frames[-1].nodes_after, visualizer.width, visualizer.height)
+    row_y_positions = sorted({visual.position[1] for visual in visuals})
+    row_gaps = [
+        next_y - current_y
+        for current_y, next_y in pairwise(row_y_positions)
+    ]
+
+    assert row_gaps
+    assert min(row_gaps) >= visualizer.minimum_row_spacing
+    app.processEvents()
+
+
+def test_scene_rect_expands_to_wrapped_node_rows():
+    app = QApplication.instance() or QApplication([])
+    visualizer = LinkedListPySideVisualizer(
+        "singly",
+        [
+            ("append", [value], f"append {value}")
+            for value in range(25)
+        ],
+        width=700,
+        height=360,
+    )
+    frames = visualizer.build_frames(visualizer.operations, visualizer.node_interval)
+
+    visualizer.render_frame(frames, frames[-1], progress=1.0, frame_index=len(frames) - 1, elapsed=1.0)
+
+    assert visualizer.scene.sceneRect().contains(visualizer.scene.itemsBoundingRect())
+    assert visualizer.scene.sceneRect().height() > visualizer.height
+    app.processEvents()
+
+
+def test_fit_to_view_frames_current_scene_contents():
+    app = QApplication.instance() or QApplication([])
+    visualizer = LinkedListPySideVisualizer(
+        "singly",
+        [
+            ("append", [value], f"append {value}")
+            for value in range(12)
+        ],
+        width=900,
+        height=500,
+    )
+    frames = visualizer.build_frames(visualizer.operations, visualizer.node_interval)
+    visualizer.render_frame(frames, frames[-1], progress=1.0, frame_index=len(frames) - 1, elapsed=1.0)
+    assert isinstance(visualizer.view, CanvasGraphicsView)
+    visualizer.view.resize(420, 240)
+    visualizer.view.set_zoom(visualizer.view.max_zoom)
+    scene_bounds = visualizer.scene.itemsBoundingRect()
+
+    visualizer.fit_to_view()
+
+    assert visualizer.view.current_zoom <= visualizer.view.max_zoom
+    assert visualizer.view.current_zoom >= visualizer.view.min_zoom
+    assert visualizer.view.fit_target.contains(scene_bounds)
+    app.processEvents()
+
+
+def test_reset_zoom_button_restores_canvas_scale():
+    app = QApplication.instance() or QApplication([])
+    visualizer = LinkedListPySideVisualizer("singly", [("append", [1], "append 1")])
+    controls = visualizer.create_playback_controls()
+    assert isinstance(visualizer.view, CanvasGraphicsView)
+    visualizer.view.set_zoom(2.0)
+
+    controls.reset_zoom_button.click()
+
+    assert visualizer.view.current_zoom == 1.0
+    assert visualizer.view.transform().m11() == pytest.approx(1.0)
     app.processEvents()
 
 
