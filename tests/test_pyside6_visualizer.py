@@ -9,6 +9,7 @@ import pytest
 
 pytest.importorskip("PySide6")
 
+from PySide6.QtGui import QImage
 from PySide6.QtWidgets import (
     QApplication,
     QComboBox,
@@ -440,6 +441,7 @@ def test_playback_controls_expose_expected_buttons():
     assert controls.findChild(QPushButton, "jump_to_end_button") is not None
     assert controls.findChild(QPushButton, "fit_to_view_button") is not None
     assert controls.findChild(QPushButton, "reset_zoom_button") is not None
+    assert controls.findChild(QPushButton, "export_screenshot_button") is not None
     app.processEvents()
 
 
@@ -566,6 +568,85 @@ def test_reset_zoom_button_restores_canvas_scale():
 
     assert visualizer.view.current_zoom == 1.0
     assert visualizer.view.transform().m11() == pytest.approx(1.0)
+    app.processEvents()
+
+
+def test_export_screenshot_writes_current_canvas_png(tmp_path):
+    app = QApplication.instance() or QApplication([])
+    visualizer = LinkedListPySideVisualizer(
+        "singly",
+        [
+            ("append", [1], "append 1"),
+            ("append", [2], "append 2"),
+        ],
+        width=640,
+        height=360,
+    )
+    visualizer.replay_current_operations()
+    visualizer.pause_playback()
+    visualizer.next_frame()
+    export_path = tmp_path / "linked-list.png"
+
+    exported = visualizer.export_screenshot(export_path)
+
+    image = QImage(str(export_path))
+    assert exported
+    assert export_path.exists()
+    assert not image.isNull()
+    assert image.width() == round(visualizer.scene.sceneRect().width())
+    assert image.height() == round(visualizer.scene.sceneRect().height())
+    assert visualizer.screenshot_status == f"Saved screenshot to {export_path}"
+    app.processEvents()
+
+
+def test_export_screenshot_works_at_end_of_playback(tmp_path):
+    app = QApplication.instance() or QApplication([])
+    visualizer = LinkedListPySideVisualizer(
+        "singly",
+        [
+            ("append", [value], f"append {value}")
+            for value in range(5)
+        ],
+    )
+    visualizer.replay_current_operations()
+    visualizer.jump_to_end()
+    export_path = tmp_path / "linked-list-end.png"
+
+    assert visualizer.export_screenshot(export_path)
+    assert not QImage(str(export_path)).isNull()
+    app.processEvents()
+
+
+def test_export_screenshot_failure_updates_status(tmp_path):
+    app = QApplication.instance() or QApplication([])
+    visualizer = LinkedListPySideVisualizer("singly", [("append", [1], "append 1")])
+    visualizer.replay_current_operations()
+    export_path = tmp_path / "missing" / "linked-list.png"
+
+    exported = visualizer.export_screenshot(export_path)
+
+    assert not exported
+    assert "Unable to save screenshot" in visualizer.screenshot_status
+    app.processEvents()
+
+
+def test_export_screenshot_button_ignores_qt_checked_argument(tmp_path, monkeypatch):
+    app = QApplication.instance() or QApplication([])
+    visualizer = LinkedListPySideVisualizer("singly", [("append", [1], "append 1")])
+    visualizer.replay_current_operations()
+    controls = visualizer.create_playback_controls()
+    export_path = tmp_path / "button-export.png"
+
+    monkeypatch.setattr(
+        "classes.pyside6_visualizer.QFileDialog.getSaveFileName",
+        lambda *_args, **_kwargs: (str(export_path), "PNG Images (*.png)"),
+    )
+
+    controls.export_screenshot_button.click()
+
+    assert export_path.exists()
+    assert not QImage(str(export_path)).isNull()
+    assert visualizer.screenshot_status == f"Saved screenshot to {export_path}"
     app.processEvents()
 
 
