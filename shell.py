@@ -132,29 +132,15 @@ class LinkedListShell(cmd.Cmd):
 
     def do_animate(self, arg):
         """Animate the linked list. Usage: animate [width] [height]"""
-        from classes.visualizer import LinkedListVisualizer
-
-        ll_type = "singly" if self.ll.__class__.__name__ == "SinglyLinkedList" else "doubly"
-        llv = LinkedListVisualizer(
-            ll_type=ll_type,
-            operations=self.operations
-        )
-        wh = [int(x) for x in arg.split(' ') if x]
-        width = 1200
-        height = 800
-        if len(wh):
-            print(f"Setting window size to {wh}")
-            width, height = wh
-        params = {
-            "width": width,
-            "height": height,
-        }
-        llv.configure(params)
-        llv.display()
+        self._display_gui(arg)
 
 
     def do_gui(self, arg):
         """Animate the linked list with PySide6. Usage: gui [width] [height]"""
+        self._display_gui(arg)
+
+
+    def _display_gui(self, arg):
         from classes.pyside6_visualizer import LinkedListPySideVisualizer
 
         ll_type = "singly" if self.ll.__class__.__name__ == "SinglyLinkedList" else "doubly"
