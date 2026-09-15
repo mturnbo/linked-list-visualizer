@@ -10,13 +10,19 @@ pytest.importorskip("PySide6")
 
 from PySide6.QtWidgets import (
     QApplication,
+    QComboBox,
     QGraphicsPathItem,
     QGraphicsPolygonItem,
     QGraphicsTextItem,
+    QLineEdit,
+    QListWidget,
 )
 
 from classes.pyside6_theme import NodeVisualState, PySideTheme
-from classes.pyside6_visualizer import LinkedListNodeItem, LinkedListPySideVisualizer
+from classes.pyside6_visualizer import (
+    LinkedListNodeItem,
+    LinkedListPySideVisualizer,
+)
 
 
 def test_pyside6_renderer_draws_supported_operation_frames():
@@ -253,6 +259,53 @@ def test_pyside6_renderer_renders_intentional_empty_state():
     app.processEvents()
 
 
+def test_pyside6_renderer_centers_empty_state_in_full_canvas():
+    app = QApplication.instance() or QApplication([])
+    visualizer = LinkedListPySideVisualizer("singly", [], width=800, height=400)
+
+    visualizer.render_first_frame([])
+
+    message = next(item for item in visualizer.scene.items() if isinstance(item, QGraphicsTextItem))
+    assert message.sceneBoundingRect().center().x() == pytest.approx(400, abs=2)
+    app.processEvents()
+
+
+def test_pyside6_renderer_does_not_draw_operations_history_in_scene():
+    app = QApplication.instance() or QApplication([])
+    visualizer = LinkedListPySideVisualizer(
+        "singly",
+        [
+            ("append", [1], "append 1"),
+            ("append", [2], "append 2"),
+        ],
+    )
+    frames = visualizer.build_frames(visualizer.operations, visualizer.node_interval)
+
+    visualizer.render_frame(frames, frames[-1], progress=1.0, frame_index=1, elapsed=1.0)
+
+    scene_text = [item.toPlainText() for item in visualizer.scene.items() if isinstance(item, QGraphicsTextItem)]
+    assert "Operations" not in scene_text
+    assert "append 1" not in scene_text
+    assert "append 2" not in scene_text
+    app.processEvents()
+
+
+def test_pyside6_renderer_lays_out_nodes_across_full_canvas():
+    app = QApplication.instance() or QApplication([])
+    visualizer = LinkedListPySideVisualizer(
+        "singly",
+        [("append", [1], "append 1")],
+        width=800,
+        height=400,
+    )
+    frames = visualizer.build_frames(visualizer.operations, visualizer.node_interval)
+
+    visual = visualizer.layout_nodes(frames[-1].nodes_after, visualizer.width, visualizer.height)[0]
+
+    assert visual.position == (80, 80)
+    app.processEvents()
+
+
 def test_pyside6_visualizer_can_be_constructed_before_qapplication():
     script = """
 import os
@@ -274,3 +327,94 @@ print("ok")
 
     assert result.returncode == 0, result.stderr
     assert "ok" in result.stdout
+
+
+def test_operations_panel_exposes_expected_controls():
+    app = QApplication.instance() or QApplication([])
+    visualizer = LinkedListPySideVisualizer("singly", [])
+
+    panel = visualizer.create_operations_panel()
+
+    assert panel.findChild(QComboBox, "list_type_selector") is not None
+    assert panel.findChild(QComboBox, "operation_selector") is not None
+    assert panel.findChild(QLineEdit, "value_input") is not None
+    assert panel.findChild(QLineEdit, "index_input") is not None
+    assert panel.findChild(QComboBox, "sort_method_selector") is not None
+    assert panel.findChild(QListWidget, "operation_history") is not None
+    app.processEvents()
+
+
+def test_operations_panel_adds_operation_and_refreshes_history():
+    app = QApplication.instance() or QApplication([])
+    visualizer = LinkedListPySideVisualizer("singly", [])
+    panel = visualizer.create_operations_panel()
+
+    panel.operation_selector.setCurrentText("append")
+    panel.value_input.setText("42")
+    panel.add_current_operation()
+
+    assert visualizer.operations == [("append", [42], "append 42")]
+    assert panel.operation_history.count() == 1
+    assert panel.operation_history.item(0).text() == "append 42"
+    assert panel.error_label.text() == ""
+    app.processEvents()
+
+
+def test_operations_panel_shows_inline_validation_error():
+    app = QApplication.instance() or QApplication([])
+    visualizer = LinkedListPySideVisualizer("singly", [])
+    panel = visualizer.create_operations_panel()
+
+    panel.operation_selector.setCurrentText("remove")
+    panel.index_input.setText("abc")
+    panel.add_current_operation()
+
+    assert visualizer.operations == []
+    assert "integer index" in panel.error_label.text()
+    app.processEvents()
+
+
+def test_operations_panel_clear_resets_scene_and_history():
+    app = QApplication.instance() or QApplication([])
+    visualizer = LinkedListPySideVisualizer("singly", [("append", [1], "append 1")])
+    panel = visualizer.create_operations_panel()
+
+    panel.operation_selector.setCurrentText("clear")
+    panel.add_current_operation()
+
+    assert visualizer.operations == []
+    assert panel.operation_history.count() == 0
+    messages = [item.toPlainText() for item in visualizer.scene.items() if isinstance(item, QGraphicsTextItem)]
+    assert "No linked list operations yet" in messages
+    app.processEvents()
+
+
+def test_operations_panel_updates_list_type_and_replays():
+    app = QApplication.instance() or QApplication([])
+    visualizer = LinkedListPySideVisualizer("singly", [("append", [1], "append 1")])
+    panel = visualizer.create_operations_panel()
+
+    panel.list_type_selector.setCurrentText("doubly")
+    panel.apply_list_type()
+
+    assert visualizer.ll_type == "doubly"
+    node_items = [item for item in visualizer.scene.items() if isinstance(item, LinkedListNodeItem)]
+    assert node_items
+    assert all(item.node_kind == "doubly" for item in node_items)
+    app.processEvents()
+
+
+def test_operations_panel_loads_file_and_replays(tmp_path):
+    app = QApplication.instance() or QApplication([])
+    ops_file = tmp_path / "ops.txt"
+    ops_file.write_text("append 1\nappend 2\n", encoding="utf-8")
+    visualizer = LinkedListPySideVisualizer("singly", [])
+    panel = visualizer.create_operations_panel()
+
+    panel.load_operations_file(ops_file)
+
+    assert visualizer.operations == [("append", [1], "append 1"), ("append", [2], "append 2")]
+    assert panel.operation_history.count() == 2
+    node_items = [item for item in visualizer.scene.items() if isinstance(item, LinkedListNodeItem)]
+    assert node_items
+    app.processEvents()
